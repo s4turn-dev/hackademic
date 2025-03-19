@@ -5,4 +5,3 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
-bool isKeyCorrect = false;

@@ -11,8 +11,6 @@ using namespace std;
 // КОМПИЛИРОВАТЬ И ЗАПУСКАТЬ ПРОГРАММУ С ВЫКЛЮЧЕННОЙ АВТОМАТИЧЕСКОЙ ОТПРАВКОЙ ОБРАЗЦОВ НА ТВОЕМ ПК И НА ВИРТУАЛКЕ
 // ЧТОБЫ ОТКЛЮЧИТЬ ОТПРАВКУ: Защита от вирусов и угроз - параметры защиты от вирусов и других угроз - управление настройками - автоотправка образцов отключить
 int main(int argc, char* argv[]) {
-    string correctKey = "1337";
-    string userInput;
     HWND Console;
     Console = FindWindowA("ConsoleWindowClass", NULL);
     ShowWindow(Console, 0);

