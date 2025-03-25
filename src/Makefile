@@ -2,21 +2,23 @@ CC=g++
 CFLAGS=-Wall -Werror -Wextra
 LDFLAGS=
 
-#SRC=$(wildcard *.cc)
-#OBJ=$(SRC:.cc=.o)
-TEXT_F=$(filter-out dummy.txt, $(wildcard *.txt))
+SRC=cryptor.cc #$(wildcard *.cc)
+OBJ=$(SRC:.cc=.o)
+EXE=hackademic
 
-all: weak
+all: $(EXE)
 
 clean:
-	rm -rf *.o $(TEXT_F) weak
+	clear
+	rm -rf *.o
+	find ./ | grep "\.hackademic" | xargs rm -f
 
 rebuild: clean all
 
 %.o: %.cc
 	$(CC) -c $(CFLAGS) $< -o $@
 
-weak: weak_example.o
-	$(CC) $(CFLAGS) $^ -o weak $(LDFLAGS)
-	./weak
+$(EXE): $(OBJ)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	./$@ ./
 
