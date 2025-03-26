@@ -20,5 +20,5 @@ rebuild: clean all
 
 $(EXE): $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-	./$@ ./
+	./$@
 
