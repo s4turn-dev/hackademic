@@ -1,8 +1,8 @@
 CC=g++
-CFLAGS=-Wall -Werror -Wextra
-LDFLAGS=
+CFLAGS=-Wall -Werror -Wextra -g
+LDFLAGS=-lcrypto
 
-SRC=cryptor.cc #$(wildcard *.cc)
+SRC=cryptor.cc main.cc #$(wildcard *.cc)
 OBJ=$(SRC:.cc=.o)
 EXE=hackademic
 
