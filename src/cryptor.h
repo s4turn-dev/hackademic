@@ -4,11 +4,13 @@
 
 class AES256CBC {
     public:
-        bool decryptFile(const std::string filename);
+        bool decryptFile(std::filesystem::path path);
         bool decryptRecursively(const std::string path);
         bool encryptFile(const std::filesystem::path pathIn);
         bool encryptRecursively(const std::string path);
+        void keyFromFile();
         void generateKey();
+        void keyToFile();
 
         AES256CBC();
         AES256CBC(unsigned char* key);
