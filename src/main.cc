@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     
     std::cout << "[i] Working within  " << path << ".\n";
     AES256CBC AES;
+    //AES.isLogging = false;
 
     // TODO : the following code looks ugly
     if (option == "e") {

@@ -25,16 +25,16 @@ AES256CBC::~AES256CBC() {
 // Methods
 
 bool AES256CBC::decryptFile(std::filesystem::path path) {
-    std::cout << "[#] Decrypting " << path << "...\n";
+    cout() << "[#] Decrypting " << path << "...\n";
     if (path.extension() != extension) {
-        std::cout << " └─ Nothing to do.\n";
+        cout() << " └─ Nothing to do.\n";
         return false;
     }
     std::ifstream fin(path, std::ios::binary);                      // No need for .close() because ifstream and ofstream
     std::ofstream fout(path.replace_extension(), std::ios::binary); // automatically close themselves when they go out of scope
     // IMPORTANT: path does not have the extension from this point!
     if (!fin or !fout) {
-        std::cerr << " └─[☓] Error opening file.\n";
+        cerr() << " └─[☓] Error opening file.\n";
         return false;
     }
     
@@ -42,7 +42,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     unsigned char iv[keySize];
     fin.readsome((char*)iv, keySize);
     if ( !ctx or !EVP_DecryptInit_ex(ctx, evp_aes256cbc, NULL, key, iv) ) {
-        std::cerr << " └─[☓] Error initializing encryption.\n";
+        cerr() << " └─[☓] Error initializing encryption.\n";
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
@@ -63,7 +63,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     EVP_CIPHER_CTX_free(ctx);
     path += extension;  // TODO: Refactor handling of the path variable
     std::filesystem::remove(path);
-    std::cout << " └─[✓] Done.\n";
+    cout() << " └─[✓] Done.\n";
     return true;
 }
 
@@ -72,12 +72,12 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
 }*/
 
 bool AES256CBC::encryptFile(const std::filesystem::path pathIn) {
-    std::cout << "[#] Encrypting " << pathIn << "...\n";
+    cout() << "[#] Encrypting " << pathIn << "...\n";
     std::string pathOut = (std::string)pathIn + extension;
     std::ifstream fin(pathIn, std::ios::binary);  // No need for .close() because ifstream and ofstream
     std::ofstream fout(pathOut, std::ios::binary);// automatically close themselves when they go out of scope
     if (!fin or !fout) {
-        std::cerr << " └─[☓] Error opening file.\n";
+        cerr() << " └─[☓] Error opening file.\n";
         return false;
     }
     
@@ -85,7 +85,7 @@ bool AES256CBC::encryptFile(const std::filesystem::path pathIn) {
     unsigned char iv[keySize];
     RAND_bytes(iv, keySize);
     if ( !ctx or !(*iv) or !EVP_EncryptInit_ex(ctx, evp_aes256cbc, NULL, key, iv) ) {
-        std::cerr << " └─[☓] Error initializing encryption.\n";
+        cerr() << " └─[☓] Error initializing encryption.\n";
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
@@ -106,7 +106,7 @@ bool AES256CBC::encryptFile(const std::filesystem::path pathIn) {
 
     EVP_CIPHER_CTX_free(ctx);
     std::filesystem::remove(pathIn);
-    std::cout << " └─[✓] Done.\n";
+    cout() << " └─[✓] Done.\n";
     return true;
 }
 
@@ -122,16 +122,16 @@ void AES256CBC::keyFromFile() {
         keyPath = "./key.hackademic";
     std::ifstream fin(keyPath, std::ios::binary);
     if (!fin)
-        std::cerr << " └─[☓] Error opening file.\n";
+        cerr() << " └─[☓] Error opening file.\n";
     else {
         fin.readsome((char*)key, keySize);
-        std::cout << "[i] Read the key from:  " << keyPath << ".\n";
+        cout() << "[i] Read the key from:  " << keyPath << ".\n";
     }
 }
 
 void AES256CBC::generateKey() {
     RAND_bytes(key, keySize);
-    std::cout << "[i] Generated key.\n";
+    cout() << "[i] Generated key.\n";
     keyToFile();
 }
 
@@ -143,9 +143,9 @@ void AES256CBC::keyToFile() {
         keyPath = "./key.hackademic";
     std::ofstream fout(keyPath, std::ios::binary);
     if (!fout)
-        std::cerr << " └─[☓] Error opening file.\n";
+        cerr() << " └─[☓] Error opening file.\n";
     else {
         fout.write((char*)key, keySize);
-        std::cout << "[i] Wrote the key to:  " << keyPath << ".\n";
+        cout() << "[i] Wrote the key to:  " << keyPath << ".\n";
     }
 }

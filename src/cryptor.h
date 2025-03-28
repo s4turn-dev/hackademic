@@ -1,9 +1,15 @@
 #include <filesystem>
+#include <iostream>
 #include <openssl/evp.h>
 #include <string>
 
 class AES256CBC {
     public:
+        bool isLogging = true;
+        std::ostream nullStream{nullptr};
+
+        std::ostream& cout() { return isLogging ? std::cout : nullStream; };
+        std::ostream& cerr() { return isLogging ? std::cerr : nullStream; };
         bool decryptFile(std::filesystem::path path);
         bool decryptRecursively(const std::string path);
         bool encryptFile(const std::filesystem::path pathIn);
@@ -15,6 +21,7 @@ class AES256CBC {
         AES256CBC();
         AES256CBC(unsigned char* key);
         ~AES256CBC();
+
     protected:
         const int keySize = 32;
         const int blockSize = 16;

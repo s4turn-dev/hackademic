@@ -33,6 +33,7 @@ git switch encryption; cd src/; make
 - [x] **[MVP]** Генерация случайного ключа для шифрования
 - [x] **[MVP]** Рекурсивный обход указанного пути и шифрование встречаемых файлов с использованием AES-256
 - [x] **[MVP]** Расшифровка файлов по указанному пути
+- [ ] Safeguard the functionality
 - [ ] Handle keys in Base64
 - [ ] Assign each attack a unique ID
 - [ ] Send AES to C2 upon finishing encryption
