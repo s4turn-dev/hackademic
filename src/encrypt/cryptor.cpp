@@ -28,7 +28,7 @@ AES256CBC::~AES256CBC() {
 
 bool AES256CBC::decryptFile(std::filesystem::path path) {
     cout() << "[#] Decrypting " << path << "...\n";
-    if (path.extension() != extension) {
+    if (path.extension() != extension_) {
         cout() << " └─ Nothing to do.\n";
         return false;
     }
@@ -62,7 +62,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     fout.write((char*)decryptedBuffer, decryptedLen);
 
     EVP_CIPHER_CTX_free(ctx);
-    path += extension;  // TODO: consider a way to make it look less stupid
+    path += extension_;  // TODO: consider a way to make it look less stupid
                         // Maybe also unify the handling with the encryption
                         // function (also make it use one "path" and have it
                         // appended)
@@ -77,7 +77,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
 
 bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     cout() << "[#] Encrypting " << pathIn << "...\n";
-    std::string pathOut = (std::string)pathIn + extension;
+    std::string pathOut = pathIn.string() + extension_;
     std::ifstream fin(pathIn, std::ios::binary);
     std::ofstream fout(pathOut, std::ios::binary);
     if (!fin or !fout) {

