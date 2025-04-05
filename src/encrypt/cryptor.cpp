@@ -62,6 +62,8 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     fout.write((char*)decryptedBuffer, decryptedLen);
 
     EVP_CIPHER_CTX_free(ctx);
+    fout.close();
+    fin.close();
     path += extension_;  // TODO: consider a way to make it look less stupid
                         // Maybe also unify the handling with the encryption
                         // function (also make it use one "path" and have it
@@ -76,6 +78,8 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
 }*/
 
 bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
+    if (pathIn.extension() == extension_)
+        return false;
     cout() << "[#] Encrypting " << pathIn << "...\n";
     std::string pathOut = pathIn.string() + extension_;
     std::ifstream fin(pathIn, std::ios::binary);
@@ -106,6 +110,7 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
 
     EVP_EncryptFinal_ex(ctx, encryptedBuffer, &encryptedLen);
     fout.write((char*)encryptedBuffer, encryptedLen);
+    fin.close();
     std::filesystem::remove(pathIn);
 
     EVP_CIPHER_CTX_free(ctx);
@@ -128,7 +133,7 @@ void AES256CBC::keyFromFile() {
     std::cout << "[/] Enter a path where to read the key from (./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
-        keyPath = "./key.hackademic";
+        keyPath = "C:\\key.hackademic";
     std::ifstream fin(keyPath, std::ios::binary);
     if (!fin)
         cerr() << " └─[☓] Error opening file.\n";
@@ -143,7 +148,7 @@ void AES256CBC::keyToFile() {
     std::cout << "[/] Enter a path where to write the key into (default=./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
-        keyPath = "./key.hackademic";
+        keyPath = "C:\\key.hackademic";
     std::ofstream fout(keyPath, std::ios::binary);
     if (!fout)
         cerr() << " └─[☓] Error opening file.\n";
