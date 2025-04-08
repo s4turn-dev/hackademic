@@ -9,11 +9,12 @@
 class AES256CBC {
     public:
         bool isLogging = true;
+        // isLogging getter setter
 
         bool decryptFile(std::filesystem::path path);
-        bool decryptRecursively(const std::filesystem::path& path);
+        void decryptRecursively(const std::filesystem::path& path);
         bool encryptFile(const std::filesystem::path& pathIn);
-        bool encryptRecursively(const std::filesystem::path& path);
+        void encryptRecursively(const std::filesystem::path& path);
         void generateKey();
         void keyFromFile();
 

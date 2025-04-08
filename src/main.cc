@@ -24,25 +24,12 @@ int main(int argc, char *argv[]) {
     
     std::cout << "[i] Working within  " << path << ".\n";
     AES256CBC AES;
-    //AES.isLogging = false;
+    //AES.isLogging = false;;
 
-    // TODO : the following code looks ugly
-    if (option == "e") {
-        AES.generateKey();
-        for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
-            std::string filename = entry.path();
-            if (!std::filesystem::is_directory(filename))
-                AES.encryptFile(filename);
-        }
-    } else {
-        AES.keyFromFile();
-        for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
-            std::string filename = entry.path();
-            if (!std::filesystem::is_directory(filename))
-                AES.decryptFile(filename);
-        }
-    }
-    // end of ugly
+    if (option == "e")
+        AES.encryptRecursively(path);
+    else
+        AES.decryptRecursively(path);
 
     return 0;
 }
