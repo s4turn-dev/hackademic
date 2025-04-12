@@ -87,7 +87,7 @@ void AES256CBC::decryptRecursively(const std::filesystem::path& path) {
 
 bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     cout() << "[#] Encrypting " << pathIn << "...\n";
-    std::string pathOut = (std::string)pathIn + extension_;
+    std::string pathOut = pathIn.string() + extension_;
     std::ifstream fin(pathIn, std::ios::binary);
     std::ofstream fout(pathOut, std::ios::binary);
     if (!fin or !fout) {

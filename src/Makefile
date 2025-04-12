@@ -1,24 +1,43 @@
-CC=g++
-CFLAGS=-Wall -Werror -Wextra -g
+CXX=g++
+CXXFLAGS=-Wall -Werror -Wextra -g
 LDFLAGS=-lcrypto
 
-SRC=cryptor.cc main.cc #$(wildcard *.cc)
-OBJ=$(SRC:.cc=.o)
+WINCXX=x86_64-w64-mingw32-g++
+WINCXXFLAGS=-I/usr/x86_64-w64-mingw32/include
+WINLDFLAGS=-L/usr/x86_64-w64-mingw32/lib \
+		   -Wl,-Bstatic -lcrypto -lstdc++ -lpthread \
+		   -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32 
+SFLAGS=-static -static-libgcc -static-libstdc++
+
+SRC=cryptor.cc main.cc
+UNIX_OBJ=$(SRC:.cc=.unix.o)
+WIN_OBJ=$(SRC:.cc=.win.o)
+
 EXE=hackademic
+
+.PHONY: all clean rebuild windows
 
 all: $(EXE)
 
 clean:
 	clear
-	rm -rf *.o
+	rm -rf *.o hackademic hackademic.exe
 	find ./ | grep "\.hackademic" | xargs rm -f
 
 rebuild: clean all
 
-%.o: %.cc
-	$(CC) -c $(CFLAGS) $< -o $@
+%.unix.o: %.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(EXE): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+$(EXE): $(UNIX_OBJ)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 	./$@
+
+%.win.o: %.cc
+	$(WINCXX) -c $(WINCXXFLAGS) $< -o $@
+
+windows: $(WIN_OBJ)
+	$(WINCXX) $^ -o $(EXE).exe $(SFLAGS) $(WINLDFLAGS)
+	x86_64-w64-mingw32-objdump -p $(EXE).exe | grep dll
+	mv $(EXE).exe shared
 
