@@ -1,3 +1,6 @@
 *.o
-*hackademic
-hackademic
+*.hackademic
+hackademic*
+
+crypto
+shared

