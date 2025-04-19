@@ -1,12 +1,16 @@
 ifeq ($(OS), Windows_NT)
 	CXX=g++
+	LIB=/crypto
+	INCLUDE=
 else
 	CXX=x86_64-w64-mingw32-g++
+	LIB=/opt/static-openssl-win64/lib64
+	INCLUDE=/opt/static-openssl-win64/include
 endif
 
-CFLAGS=-std=c++17
+CXXFLAGS=-std=c++17 -I$(INCLUDE)
 SFLAGS=-static -static-libgcc -static-libstdc++
-LDFLAGS=-L/crypto -Wl,-Bstatic -lcrypto -lstdc++ -lpthread -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32
+LDFLAGS=-L/$(LIB) -Wl,-Bstatic -lcrypto -lstdc++ -lpthread -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32
 
 SRC=main.cpp $(wildcard encrypt/*.cpp) $(wildcard pers/*.cpp)
 OBJ=$(SRC:.cpp=.o)
@@ -24,7 +28,7 @@ endif
 rebuild: clean all
 
 %.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(EXE): $(OBJ)
 	$(CXX) -static $(OBJ) -o $@ $(SFLAGS) $(LDFLAGS)
