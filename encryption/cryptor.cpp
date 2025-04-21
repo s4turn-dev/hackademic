@@ -26,6 +26,8 @@ AES256CBC::~AES256CBC() {
 
 // Methods
 
+
+
 bool AES256CBC::decryptFile(std::filesystem::path path) {
     cout() << "[#] Decrypting " << path << "...\n";
     if (path.extension() != extension_) {
@@ -68,14 +70,27 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
                         // Maybe also unify the handling with the encryption
                         // function (also make it use one "path" and have it
                         // appended)
+
+    fin.close();
+    fout.close();
     std::filesystem::remove(path);
     cout() << " └─[✓] Done.\n";
     return true;
 }
 
-/*void AES256CBC::decryptRecursively(const std::string path) {
-    return false;
-}*/
+void AES256CBC::decryptRecursively(const std::filesystem::path& path) {
+    //if (!key)  // Do we need this architecture-wise?
+    if (!std::filesystem::is_directory(path)) {
+        std::cerr << "Error: not a directory: " << path << "\n";
+        return;
+    }
+    keyFromFile();
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
+        std::filesystem::path filename = entry.path();
+        if (filename.extension() == extension_ and std::filesystem::is_regular_file(entry))
+            decryptFile(filename);
+    }
+}
 
 bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     if (pathIn.extension() == extension_)
@@ -113,14 +128,27 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     fin.close();
     std::filesystem::remove(pathIn);
 
+    fin.close();
+    fout.close();
+    std::filesystem::remove(pathIn);
     EVP_CIPHER_CTX_free(ctx);
     cout() << " └─[✓] Done.\n";
     return true;
 }
 
-/*void AES256CBC::encryptRecursively(const std::string path) {
-    ;
-}*/
+void AES256CBC::encryptRecursively(const std::filesystem::path& path) {
+    if (!std::filesystem::is_directory(path)) {
+        std::cerr << "Error: not a directory: " << path << "\n";
+        return;
+    }
+    //if (!key)  // Do we need this architecture-wise?
+    generateKey();
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
+        std::filesystem::path filename = entry.path();
+        if (filename.extension() != extension_ and std::filesystem::is_regular_file(entry))
+            encryptFile(filename);
+    }
+}
 
 void AES256CBC::generateKey() {
     RAND_bytes(key, keySize_);

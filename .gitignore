@@ -1,0 +1,10 @@
+# Static lib
+crypto
+
+# VM shared folder
+shared
+
+# Build products
+*.o
+*.exe
+

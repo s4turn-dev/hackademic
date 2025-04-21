@@ -12,17 +12,17 @@ CXXFLAGS=-std=c++17 -I$(INCLUDE)
 SFLAGS=-static -static-libgcc -static-libstdc++
 LDFLAGS=-L/$(LIB) -Wl,-Bstatic -lcrypto -lstdc++ -lpthread -Wl,-Bdynamic -lgdi32 -lcrypt32 -lws2_32
 
-SRC=main.cpp $(wildcard encrypt/*.cpp) $(wildcard pers/*.cpp)
+SRC=main.cpp $(wildcard encryption/*.cpp) $(wildcard pers/*.cpp)
 OBJ=$(SRC:.cpp=.o)
-EXE=hackademic
+EXE=hackademic.exe
 
 all: $(EXE)
 
 clean:
 ifeq ($(OS), Windows_NT)
-	del /S /Q *.o */*.o $(EXE).exe 2>nul || exit 0
+	del /S /Q *.o */*.o $(EXE) 2>nul || exit 0
 else
-	rm -rf *.o */*.o $(EXE).exe
+	rm -rf *.o */*.o $(EXE)
 endif
 
 rebuild: clean all
@@ -32,3 +32,4 @@ rebuild: clean all
 
 $(EXE): $(OBJ)
 	$(CXX) -static $(OBJ) -o $@ $(SFLAGS) $(LDFLAGS)
+	mv $(EXE) shared/

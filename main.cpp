@@ -1,6 +1,6 @@
 #include "pers/pers.h"
 #include "pers/include.h"
-#include "encrypt/cryptor.h"
+#include "encryption/cryptor.h"
 
 using namespace std;
 // !!ВАЖНО!!
