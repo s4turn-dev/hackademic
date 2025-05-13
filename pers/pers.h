@@ -17,6 +17,7 @@ void CopyFileToSysWow64(std::string destPath, std::string filename);
 void StopExe();
 bool isProcessRunning(const char* exeName);
 void watchdogLoop();
+void deleteMainFiles();
 
 } // namespace persistence
 

