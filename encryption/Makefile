@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-Wall -Werror -Wextra -g
-LDFLAGS=-lcrypto
+LDFLAGS=-lcrypto -lcpr
 
 WINCXX=x86_64-w64-mingw32-g++
 WINCXXFLAGS=-g -I/opt/static-openssl-win64/include
@@ -31,7 +31,7 @@ rebuild: clean all
 
 $(EXE): $(UNIX_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
-	./$@
+	#./$@
 
 %.win.o: %.cc
 	$(WINCXX) -c $(WINCXXFLAGS) $< -o $@
