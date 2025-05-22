@@ -7,8 +7,9 @@
 int main(int argc, char *argv[]) {
     AES256CBC AES;
     AES.C2Addr = "http://127.0.0.1:5000";
-    AES.keyFromC2("test-in");
-    AES.keyToC2("test-out");
+    AES.keyFromC2("test-b64-in");
+    AES.generateKey();
+    AES.keyToC2("test-b64-out");
     return 0;
 
 
