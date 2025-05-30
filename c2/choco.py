@@ -3,10 +3,9 @@ from flask import request
 import sqlite3
 from http import HTTPStatus
 from flask import render_template
-import rsa
+
 
 app = Flask(__name__)
-PublicKey, PrivateKey = rsa.newkeys(512)  # временно
 
 db = sqlite3.connect('HackAdemicBase.db', check_same_thread=False)
 
@@ -36,17 +35,16 @@ def save_key():
 def get_key():
     cur = db.cursor()
     try:
-        encrypt_result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
+        result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
     except KeyError:
-        print('Prazyan4ik ne polychit klyuch')
+        print('Chelik ne polychit klyuch')
         return 'Sho delat', HTTPStatus.BAD_REQUEST
     else:
-        if encrypt_result:
-            print('Prazyan4iky povezlo')
-            decrypt_result = str(rsa.decrypt(bytes(encrypt_result), PrivateKey))
-            return decrypt_result, HTTPStatus.OK
+        if result:
+            print('4eliky povezlo')
+            return result, HTTPStatus.OK
         else:
-            print('Takogo prazyan4ika ne sushestvyet')
+            print('Takogo 4elika ne sushestvyet')
             return '', HTTPStatus.NOT_FOUND
 
 
