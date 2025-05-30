@@ -20,7 +20,7 @@ WINLDFLAGS=-L/opt/static-openssl-win64/lib64 \
 		     -lws2_32 -lcrypt32 -lgdi32 -lwinmm -lbcrypt
 SFLAGS=-static -static-libgcc -static-libstdc++
 
-SRC=cryptor.cc main.cc
+SRC=cryptor.cpp main.cpp
 UNIX_OBJ=$(SRC:.cc=.unix.o)
 WIN_OBJ=$(SRC:.cc=.win.o)
 

