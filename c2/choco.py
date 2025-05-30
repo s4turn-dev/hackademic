@@ -3,10 +3,9 @@ from flask import request
 import sqlite3
 from http import HTTPStatus
 from flask import render_template
-import rsa
+
 
 app = Flask(__name__)
-PublicKey, PrivateKey = rsa.newkeys(512)  # временно
 
 db = sqlite3.connect('HackAdemicBase.db', check_same_thread=False)
 
@@ -16,7 +15,7 @@ db.cursor().execute('''CREATE table if not exists hack(
                         Key string(32)
                         )
                     ''')
-# db.cursor().execute("INSERT OR IGNORE INTO hack VALUES(145454, '123', '4adc')")
+
 db.commit()
 
 
@@ -36,17 +35,16 @@ def save_key():
 def get_key():
     cur = db.cursor()
     try:
-        encrypt_result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
+        result = cur.execute("SELECT Key FROM hack WHERE UniqID = ? ", [request.form['UniqID']]).fetchone()
     except KeyError:
-        print('Prazyan4ik ne polychit klyuch')
+        print('Chelik ne polychit klyuch')
         return 'Sho delat', HTTPStatus.BAD_REQUEST
     else:
-        if encrypt_result:
-            print('Prazyan4iky povezlo')
-            decrypt_result = str(rsa.decrypt(bytes(encrypt_result), PrivateKey))
-            return decrypt_result, HTTPStatus.OK
+        if result:
+            print('4eliky povezlo')
+            return result, HTTPStatus.OK
         else:
-            print('Takogo prazyan4ika ne sushestvyet')
+            print('Takogo 4elika ne sushestvyet')
             return '', HTTPStatus.NOT_FOUND
 
 
@@ -68,8 +66,8 @@ def delete_key():
 def xz():
     cur = db.cursor()
     vision = cur.execute('SELECT * FROM hack ')
-    return render_template('gg.html', items=vision)
+    return render_template('gg.html', items=vision).fetchall()
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='192.168.100.1')
