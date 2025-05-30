@@ -15,7 +15,7 @@ db.cursor().execute('''CREATE table if not exists hack(
                         Key string(32)
                         )
                     ''')
-# db.cursor().execute("INSERT OR IGNORE INTO hack VALUES(145454, '123', '4adc')")
+
 db.commit()
 
 
@@ -66,7 +66,7 @@ def delete_key():
 def xz():
     cur = db.cursor()
     vision = cur.execute('SELECT * FROM hack ')
-    return render_template('gg.html', items=vision)
+    return render_template('gg.html', items=vision).fetchall()
 
 
 if __name__ == '__main__':
