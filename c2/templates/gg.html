@@ -2,23 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack Database</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 5px #0f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #0f0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #0f0;
+            text-align: left;
+        }
+        th {
+            background-color: #003300;
+        }
+        tr:nth-child(even) {
+            background-color: #222;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px dashed #0f0;
+        }
+        .btn {
+            background: #222;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        .btn:hover {
+            background: #0f0;
+            color: #111;
+        }
+    </style>
 </head>
 <body>
+    <h1>Database Records</h1>
+
+    {% if items %}
     <table>
-        <tr>
-            <td>№</td>
-            <td>UniqID</td>
-            <td>Key</td>
-        </tr>
-        {% for i in items %}
+        <thead>
             <tr>
-                <td>{{i[0]}}</td>
-                <td>{{i[1]}}</td>
-                <td>{{i[2]}}</td>
+                <th>ID</th>
+                <th>Unique ID</th>
+                <th>Key</th>
             </tr>
-        {% endfor %}
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item[0] }}</td>
+                <td>{{ item[1] }}</td>
+                <td>{{ item[2] }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
+    {% else %}
+    <p>No records found in database</p>
+    {% endif %}
+
+    <div class="status">
+        Records found: {{ items|length if items else 0 }}<br>
+        Status: Operational
+    </div>
 
 
 </body>
