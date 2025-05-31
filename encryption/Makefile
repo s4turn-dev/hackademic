@@ -20,9 +20,9 @@ WINLDFLAGS=-L/opt/static-openssl-win64/lib64 \
 		     -lws2_32 -lcrypt32 -lgdi32 -lwinmm -lbcrypt
 SFLAGS=-static -static-libgcc -static-libstdc++
 
-SRC=cryptor.cc main.cc
-UNIX_OBJ=$(SRC:.cc=.unix.o)
-WIN_OBJ=$(SRC:.cc=.win.o)
+SRC=cryptor.cpp main.cpp
+UNIX_OBJ=$(SRC:.cpp=.unix.o)
+WIN_OBJ=$(SRC:.cpp=.win.o)
 
 EXE=hackademic
 
@@ -37,14 +37,14 @@ clean:
 
 rebuild: clean all
 
-%.unix.o: %.cc
+%.unix.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(EXE): $(UNIX_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 	#./$@
 
-%.win.o: %.cc
+%.win.o: %.cpp
 	$(WINCXX) -c $(WINCXXFLAGS) $< -o $@
 
 windows: $(WIN_OBJ)
