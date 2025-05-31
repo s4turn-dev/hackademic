@@ -31,16 +31,13 @@ else
 		   -Wl,-Bdynamic \
 		     -lws2_32 -lcrypt32 -lgdi32 -lwinmm -lbcrypt
 
-
-	LIB = /opt/static-openssl-win64/lib64
-	INCLUDE = /opt/static-openssl-win64/include
 	RM = rm -rf
 	MV = mv
 	EXE = hackademic.exe
 endif
 
 # Файлы
-SRC = main.cpp $(wildcard encryption/*.cpp) $(wildcard pers/*.cpp)
+SRC = main.cpp encryption/cryptor.cpp $(wildcard pers/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 
 
@@ -49,7 +46,7 @@ OBJ = $(SRC:.cpp=.o)
 all: $(EXE)
 
 clean:
-	$(RM) *.o */*.o $(EXE) >nul 2>&1 || exit 0
+	$(RM) *.o */*.o $(EXE) 
 
 rebuild: clean all
 
