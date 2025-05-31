@@ -65,8 +65,8 @@ def delete_key():
 @app.route('/gg')
 def xz():
     cur = db.cursor()
-    vision = cur.execute('SELECT * FROM hack ')
-    return render_template('gg.html', items=vision).fetchall()
+    vision = cur.execute('SELECT * FROM hack ').fetchall()
+    return render_template('gg.html', items=vision)
 
 
 if __name__ == '__main__':
